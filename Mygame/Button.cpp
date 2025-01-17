@@ -77,8 +77,8 @@ void Button::handleChecklistSelection(std::vector<std::vector<Cell>>& grid, cons
                   
                     bfs(grid, start, end,window);
                  
-                    start.type = CellType::None;
-                    end.type = CellType::None;
+                    start.setType(CellType::None);
+                    end.setType(CellType::None);
 
                 }
                
@@ -123,7 +123,7 @@ void Button::generateRandomMap(std::vector<std::vector<Cell>>& grid, Cell& start
                 cell.clean();
                 cell.setType(CellType::None); // Cellule vide
             }
-            cell.distance = std::numeric_limits<float>::infinity(); // Réinitialisation des distances
+            cell.setdistance(std::numeric_limits<float>::infinity()); // Réinitialisation des distances
         }
     }
   
@@ -152,7 +152,7 @@ void Button::bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
     sf::Clock clock;
     sf::Color amber(255, 191, 0); // RGB pour ambre
   //  start.visited = true;
-    grid[start.indexX][start.indexY].visited = true;
+    grid[start.indexX][start.indexY].setVisited();
     queue.push(&grid[start.indexX][start.indexY]);
 
     while (!queue.empty())
@@ -171,11 +171,11 @@ void Button::bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
         // Vérifie les voisins
         for (auto& neighbor : getNeighbors(grid, *current))
         {
-            if (!neighbor->visited  && neighbor->type != CellType::Wall)
+            if (!neighbor->getVisited() && neighbor->getType() != CellType::Wall)
             {
                 
-                neighbor->visited = true;
-                neighbor->parent = current; // Définit le parent pour retracer le chemin
+                neighbor->setVisited();
+                neighbor->setparent (current); // Définit le parent pour retracer le chemin
                 if (*neighbor == end)
                 {
                    // tracePath(end); // Trace le chemin
@@ -213,7 +213,7 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
 
     sf::Color amber(255, 191, 0); // RGB pour ambre
     //  start.visited = true;
-    grid[start.indexX][start.indexY].visited = true;
+    grid[start.indexX][start.indexY].setVisited();
     Stak.push(&grid[start.indexX][start.indexY]);
     
 
@@ -233,11 +233,11 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
         // Vérifie les voisins
         for (auto& neighbor : getNeighbors(grid, *current))
         {
-            if (!neighbor->visited && neighbor->type != CellType::Wall)
+            if (!neighbor->getVisited() && neighbor->getType() != CellType::Wall)
             {
 
-                neighbor->visited = true;
-                neighbor->parent = current; // Définit le parent pour retracer le chemin
+                neighbor->setVisited();
+                neighbor->setparent(current); // Définit le parent pour retracer le chemin
                 if (*neighbor == end)
                 {
                     // tracePath(end); // Trace le chemin
@@ -271,36 +271,37 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
 void Button::dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window) {
    
     auto compare = [](Cell* a, Cell* b) {
-        return a->distance > b->distance; // Comparer par coût croissant
+        return a->getdistance() > b->getdistance(); // Comparer par coût croissant
         };
     sf::Clock clock;
     std::priority_queue<Cell*, std::vector<Cell*>, decltype(compare)> pq(compare);
 
-    grid[start.indexX][start.indexY].distance = 0; // Le coût du point de départ est 0
-    grid[start.indexX][start.indexY].visited=true;;
+    grid[start.indexX][start.indexY].setdistance(0); // Le coût du point de départ est 0
+    grid[start.indexX][start.indexY].setVisited();
     pq.push(&grid[start.indexX][start.indexY]);
 
-    while (!pq.empty()) {
+    while (!pq.empty())
+    {
         Cell* current = pq.top();
         pq.pop();
 
         // Gérer le délai pour rendre l'animation progressive
         while (clock.getElapsedTime().asMilliseconds() < 20) {
-            // Attendre un petit moment (ajuster les millisecondes si nécessaire)
+            // Attendre un petit moment
         }
         clock.restart();
 
         // Parcours des voisins
         for (auto &neighbor : getNeighbors(grid, *current))
         {
-            if (!neighbor->visited && neighbor->type != CellType::Wall) 
+            if (!neighbor->getVisited() && neighbor->getType() != CellType::Wall)
             {
-                int newCost = current->distance + 1; // Supposons un coût uniforme
-                if (newCost < neighbor->distance) 
+                int newCost = current->getdistance() + 1; // Supposons un coût uniforme
+                if (newCost < neighbor->getdistance()) 
                 {
-                    neighbor->distance = newCost;
-                    neighbor->parent = current;
-                    neighbor->visited = true;
+                    neighbor->setdistance(newCost);
+                    neighbor->setparent(current);
+                    neighbor->setVisited();
 
                     if (*neighbor==end) {
                         animatePath(&end, window, 0.2f,grid);
@@ -350,14 +351,6 @@ std::vector<Cell*> Button::getNeighbors(std::vector<std::vector<Cell>>& grid, Ce
     return neighbors;
 }
 
-void Button::tracePath(Cell& end) {
-    Cell* current = &end;
-
-    while (current) {
-        current->updateColor(sf::Color::Green); // Colore le chemin trouvé
-        current = current->parent;
-    }
-}
 
 
 void Button::animatePath(Cell* end, sf::RenderWindow& window, float durationPerCell, std::vector<std::vector<Cell>>& grid)
@@ -369,8 +362,9 @@ void Button::animatePath(Cell* end, sf::RenderWindow& window, float durationPerC
     Cell* current =&grid[end->indexX][end->indexY];
     while (current != nullptr)
     {
+
         path.push_back(current);
-        current = current->parent;
+        current = current->getparent();
 
     }
    
@@ -388,9 +382,9 @@ void Button::animatePath(Cell* end, sf::RenderWindow& window, float durationPerC
             elapsed = clock.getElapsedTime().asSeconds();
             float progress = elapsed / durationPerCell;
 
-            // Interpolation de la couleur (or -> jaune clair -> vert)
-            sf::Color startColor = sf::Color(255, 215, 0); // Or
-            sf::Color endColor = sf::Color(50, 205, 50);   // Vert clair
+          
+            sf::Color startColor = sf::Color(255, 0, 0); 
+            sf::Color endColor = sf::Color(0, 255, 0);   
             path[i]->cel.setFillColor(sf::Color(
                 static_cast<sf::Uint8>(startColor.r + progress * (endColor.r - startColor.r)),
                 static_cast<sf::Uint8>(startColor.g + progress * (endColor.g - startColor.g)),
@@ -420,20 +414,23 @@ void Button::astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end,
 {
     sf::Clock clock;
     auto heuristic = [](Cell* a, Cell* b) {
-        return abs(a->posX - b->posY) + abs(a->posX - b->posY); // Heuristique Manhattan
+       return sqrt(pow(a->indexX-b->indexX,2)+pow(a->indexY-b->indexY,2)) ; // Distance Eucludienne
+        // return abs(a->indexX - b->indexX) + abs(a->indexY - b->indexY);// Distance de Manathan
         };
 
     auto compare = [](Cell* a, Cell* b) {
-        return (a->distance + a->heuristic) > (b->distance + b->heuristic);
+        return (a->getdistance() + a->getheuristic()) > (b->getdistance() + b->getheuristic());
         };
 
     std::priority_queue<Cell*, std::vector<Cell*>, decltype(compare)> pq(compare);
 
-    grid[start.indexX][start.indexY].distance = 0;
-    grid[start.indexX][start.indexY].heuristic = heuristic(&start, &end);
-    pq.push(&start);
+    grid[start.indexX][start.indexY].setdistance(0);
+    grid[start.indexX][start.indexY].setVisited();
+    grid[start.indexX][start.indexY].setheuristic( heuristic(&start, &end));
+    pq.push(&grid[start.indexX][start.indexY]);
 
-    while (!pq.empty()) {
+    while (!pq.empty()) 
+    {
         Cell* current = pq.top();
         pq.pop();
 
@@ -443,30 +440,23 @@ void Button::astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end,
         }
         clock.restart();
 
-        // Coloration pour l'animation de la cellule visitée
-        if (current != &start && current != &end) {
-            current->updateColor(sf::Color(255, 140, 0)); // Couleur orange
-        }
+       
 
-        // Vérifiez si nous avons atteint la fin
-        if (current == &end) {
-            animatePath(&end, window, 0.2f, grid);
-            return;
-        }
+     
 
         // Parcours des voisins
         for (auto &neighbor : getNeighbors(grid, *current)) 
         {
-            if (!neighbor->visited && neighbor->type != CellType::Wall)
+            if (!neighbor->getVisited() && neighbor->getType() != CellType::Wall)
             {
-                int newCost = current->distance + 1;
-                if (newCost < neighbor->distance) 
+                int newCost = current->getdistance() + 1;
+                if (newCost < neighbor->getdistance())
                 {
-                    neighbor->distance = newCost;
-                    neighbor->heuristic = heuristic(neighbor, &end);
-                    neighbor->parent = current;
+                    neighbor->setdistance(newCost);
+                    neighbor->setheuristic(heuristic(neighbor, &end));
+                    neighbor->setparent(current);
 
-                    neighbor->visited = true;
+                    neighbor->setVisited();
 
                     if (*neighbor == end) {
                         animatePath(&end, window, 0.2f, grid);
@@ -503,6 +493,3 @@ void Button::astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end,
 }
 
 
-float Button::manhattanDistance(const Cell& a, const Cell& b) {
-    return std::abs(a.posX - b.posX) + std::abs(a.posY - b.posY);
-}

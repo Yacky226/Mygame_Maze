@@ -26,13 +26,52 @@ Cell::Cell(const Cell& C)
     height = C.height;
     width = C.width;
     heuristic = C.heuristic;
-    istarget = C.istarget;
     parent = C.parent;
     distance = C.distance;
     visited = C.visited;
     indexX = C.indexX;
     indexY = C.indexY;
 
+}
+
+void Cell::setparent(Cell* c)
+{
+    this->parent = c;
+}
+
+Cell* Cell::getparent()
+{
+    return parent;
+}
+
+void Cell::setVisited()
+{
+    this->visited = true;
+}
+
+bool Cell::getVisited()
+{
+    return visited;
+}
+
+void Cell::setdistance(float dis)
+{
+    distance = dis;
+}
+
+float Cell::getdistance()
+{
+    return distance;
+}
+
+void Cell::setheuristic(float dis)
+{
+    heuristic = dis;
+}
+
+float Cell::getheuristic()
+{
+    return heuristic;
 }
 
 // Mise à jour de la couleur de la cellule en fonction de son type
@@ -55,6 +94,13 @@ void Cell::updateColor()
     }
     cel.setFillColor(cellcolor); // Appliquer la couleur
 }
+
+Cell& Cell::getCell()
+{
+    return *this;
+   
+}
+
 
 void Cell::updateColor(const sf::Color& couleur)
 {
@@ -116,7 +162,6 @@ void Cell::SetColor(sf::Color& couleur)
 void Cell::clean()
 {
     this->cellcolor = sf::Color::White;
-    this->istarget = false;
     this->heuristic = 0.0f;
     this->parent = nullptr;
     this->type = CellType::None;
@@ -153,55 +198,5 @@ void Cell::setType(CellType newType)
 CellType Cell::getType() const
 {
     return type;
-}
-
-void Cell::animateVisited(sf::RenderWindow& window, float duration)
-{
-    sf::Clock clock;
-    float elapsed = 0.f;
-
-    // Couleurs de transition (correspondant aux étapes CSS)
-    sf::Color startColor = sf::Color(255, 165, 0); // Orange initial
-    sf::Color midColor = sf::Color(111, 111, 111, 191); // Gris transparent
-    sf::Color endColor = sf::Color(255, 200, 120); // Orange clair
-
-    while (elapsed < duration)
-    {
-        elapsed = clock.getElapsedTime().asSeconds();
-        float progress = elapsed / duration;
-
-        // Interpolation des couleurs
-        if (progress < 0.5f) {
-            float factor = progress * 2;
-            cel.setFillColor(sf::Color(
-                static_cast<sf::Uint8>(startColor.r + factor * (midColor.r - startColor.r)),
-                static_cast<sf::Uint8>(startColor.g + factor * (midColor.g - startColor.g)),
-                static_cast<sf::Uint8>(startColor.b + factor * (midColor.b - startColor.b)),
-                static_cast<sf::Uint8>(startColor.a + factor * (midColor.a - startColor.a))
-            ));
-        }
-        else {
-            float factor = (progress - 0.5f) * 2;
-            cel.setFillColor(sf::Color(
-                static_cast<sf::Uint8>(midColor.r + factor * (endColor.r - midColor.r)),
-                static_cast<sf::Uint8>(midColor.g + factor * (endColor.g - midColor.g)),
-                static_cast<sf::Uint8>(midColor.b + factor * (endColor.b - midColor.b)),
-                static_cast<sf::Uint8>(midColor.a + factor * (endColor.a - midColor.a))
-            ));
-        }
-
-        // Interpolation de l'échelle
-        float scaleFactor = 0.3f + progress * (progress < 0.75f ? 1.2f - 0.3f : 1.f - 1.2f);
-        cel.setScale(scaleFactor, scaleFactor);
-
-        // Afficher la cellule mise à jour
-        window.clear(sf::Color::Black); // Nettoie la fenêtre
-        window.draw(cel);               // Dessine la cellule
-        window.display();               // Met à jour l'affichage
-    }
-
-    // Finalisation : applique l'état final
-    cel.setFillColor(endColor);
-    cel.setScale(1.f, 1.f);
 }
 

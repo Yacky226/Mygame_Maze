@@ -1,9 +1,25 @@
 #include "Fenetre.h"
 
+
+
 Fenetre::Fenetre(int ScreenW,
 int ScreenH,
-sf::Color colorfe):ScreenH(ScreenH), ScreenW(ScreenW),colorfe(colorfe)
-{}
+sf::Color colorfe):ScreenH(ScreenH), ScreenW(ScreenW),colorfe(colorfe),window(sf::VideoMode(ScreenW, ScreenH), "Maze")
+{ }
+
+sf::RenderWindow& Fenetre::getWindow()
+{
+	return window;
+}
+
+int Fenetre::getScreenW()
+{
+	return ScreenW;
+}
+int Fenetre::getScreenH()
+{
+	return ScreenH;
+}
 
 void Fenetre::draw()
 {

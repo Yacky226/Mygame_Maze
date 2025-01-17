@@ -134,19 +134,15 @@
     <ClCompile Include="Cell.cpp" />
     <ClCompile Include="ChecklistItem.cpp" />
     <ClCompile Include="Fenetre.cpp" />
-    <ClCompile Include="Graph.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainController.cpp" />
-    <ClCompile Include="Position.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Button.h" />
     <ClInclude Include="Cell.h" />
     <ClInclude Include="ChecklistItem.h" />
     <ClInclude Include="Fenetre.h" />
-    <ClInclude Include="Graph.h" />
     <ClInclude Include="MainController.h" />
-    <ClInclude Include="Position.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

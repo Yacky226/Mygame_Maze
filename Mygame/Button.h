@@ -6,11 +6,13 @@
 
 
 // Structure pour le bouton
-struct Button 
+class Button 
 {
+private:
     sf::RectangleShape shape;
     sf::Text label;
 
+public:
     Button(sf::Font& font, const std::string& text,
         const sf::Vector2f& position, const sf::Vector2f& size);
 
@@ -27,8 +29,6 @@ struct Button
     void dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
     void dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
     std::vector<Cell*> getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell);
-    void tracePath(Cell& end);
     void animatePath(Cell* end, sf::RenderWindow& window, float durationPerCell, std::vector<std::vector<Cell>>& grid);
     void astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
-    float manhattanDistance(const Cell& a, const Cell& b);
 };
