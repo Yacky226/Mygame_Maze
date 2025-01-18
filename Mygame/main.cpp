@@ -9,7 +9,7 @@
 
 int main() {
     // Dimensions dynamiques de la fenêtre
-    Fenetre F(1300, 800, sf::Color::Black);
+    Fenetre F(1300, 800);
     Cell start;
     Cell end;
     bool startPointDefined = false;

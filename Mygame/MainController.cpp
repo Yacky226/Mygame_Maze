@@ -4,17 +4,18 @@
 
 // Constructeur
 MainController::MainController(Fenetre& F, int rows, int cols)
-    : rows(rows), cols(cols), gridOrigin(250, 10)
+    : rows(rows), cols(cols), gridOrigin(250, 10) // Initialise les dimensions et l'origine de la grille
 {
     // Calcul de la taille dynamique des cellules
     cellSize = std::min(
-        F.getScreenW() / (cols + 10),
-        F.getScreenH() / (rows + 2)
+        F.getScreenW() / (cols + 10), // Largeur maximale en fonction de l'écran
+        F.getScreenH() / (rows + 2)  // Hauteur maximale en fonction de l'écran
     );
 
     // Redimensionne la grille
     grid.resize(rows, std::vector<Cell>(cols));
 
+    // Initialise les différentes parties de l'application
     initializeGrid(F);
     initializeChecklist();
     initializeButtons();
@@ -28,7 +29,7 @@ void MainController::initializeGrid(Fenetre& F)
             // Calcule dynamiquement la position de chaque cellule
             float x = gridOrigin.x + j * cellSize;
             float y = gridOrigin.y + i * cellSize;
-            grid[i][j] = Cell(i, j, x, y, cellSize, cellSize);
+            grid[i][j] = Cell(i, j, x, y, cellSize, cellSize); // Initialise une cellule avec ses dimensions et sa position
         }
     }
 }
@@ -37,9 +38,9 @@ void MainController::initializeGrid(Fenetre& F)
 void MainController::drawGrid(Fenetre& F)
 {
     sf::RenderWindow& window = F.getWindow();
-    for (const auto& row : grid) {
-        for (const auto& cell : row) {
-            window.draw(cell.cel); // Dessine chaque cellule
+    for (const auto& row : grid) { // Parcourt chaque ligne de la grille
+        for (const auto& cell : row) { // Parcourt chaque cellule
+            window.draw(cell.cel); // Dessine la cellule dans la fenêtre
         }
     }
 }
@@ -53,24 +54,24 @@ void MainController::handleMouseClick(
     bool& endPointDefined)
 {
     sf::RenderWindow& window = F.getWindow();
-    sf::Vector2f mousePos = F.getPositionMouse(window);
+    sf::Vector2f mousePos = F.getPositionMouse(window); // Récupère la position de la souris
 
-    // Gestion des boutons
+    // Gestion des clics sur les boutons
     for (auto& button : Buttons) {
-        if (button->isClicked(mousePos)) {
-            button->onClick(grid, checklist, start, end, window, startPointDefined, endPointDefined);
-            return; // Arrête ici si un bouton a été cliqué
+        if (button->isClicked(mousePos)) { // Vérifie si un bouton a été cliqué
+            button->onClick(grid, checklist, start, end, window, startPointDefined, endPointDefined); // Exécute l'action associée
+            return; // Arrête la vérification si un bouton a été cliqué
         }
     }
 
-    // Gestion de la checklist
+    // Gestion des clics sur les éléments de la checklist
     ChecklistItem::handleClick(mousePos, checklist);
 
     // Gestion des clics sur les cellules
     for (auto& row : grid) {
         for (auto& cell : row) {
-            if (cell.cel.getGlobalBounds().contains(mousePos)) {
-                cell.handleClick(startPointDefined, endPointDefined, start, end);
+            if (cell.cel.getGlobalBounds().contains(mousePos)) { // Vérifie si la souris est sur une cellule
+                cell.handleClick(startPointDefined, endPointDefined, start, end); // Gère le clic sur la cellule
             }
         }
     }
@@ -81,36 +82,38 @@ void MainController::initializeChecklist()
 {
     // Chargement de la police
     sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) {
+    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) { // Chemin vers la police
         std::cerr << "Erreur de chargement de la police pour les boutons !" << std::endl;
         return;
     }
 
     // Création de la checklist avec des positions dynamiques
     checklist = {
-        ChecklistItem(*font, "BFS", sf::Vector2f(40, 50)),
-        ChecklistItem(*font, "DFS", sf::Vector2f(40, 120)),
-        ChecklistItem(*font, "Dijkstra", sf::Vector2f(40, 190)),
-        ChecklistItem(*font, "A_star", sf::Vector2f(40, 260))
+        ChecklistItem(*font, "BFS", sf::Vector2f(40, 50)),       // Option pour BFS
+        ChecklistItem(*font, "DFS", sf::Vector2f(40, 120)),      // Option pour DFS
+        ChecklistItem(*font, "Dijkstra", sf::Vector2f(40, 190)), // Option pour Dijkstra
+        ChecklistItem(*font, "A_star", sf::Vector2f(40, 260))    // Option pour A*
     };
 }
 
 // Initialisation des boutons
 void MainController::initializeButtons()
 {
-    float buttonWidth = 150;
-    float buttonHeight = 50;
+    float buttonWidth = 150;  // Largeur du bouton
+    float buttonHeight = 50;  // Hauteur du bouton
+
     // Chargement de la police
     sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) {
+    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) { // Chemin vers la police
         std::cerr << "Erreur de chargement de la police pour les boutons !" << std::endl;
         return;
     }
 
+    // Création des boutons avec leurs positions et tailles
     Buttons = {
-        new Button(*font, "Traitement", sf::Vector2f(40, 350), sf::Vector2f(buttonWidth, buttonHeight)),
-        new Button(*font, "Map Aleatoire", sf::Vector2f(40, 420), sf::Vector2f(buttonWidth, buttonHeight)),
-        new Button(*font, "Clean Map", sf::Vector2f(40, 490), sf::Vector2f(buttonWidth, buttonHeight))
+        new Button(*font, "Traitement", sf::Vector2f(40, 350), sf::Vector2f(buttonWidth, buttonHeight)), // Bouton pour traiter la grille
+        new Button(*font, "Map Aleatoire", sf::Vector2f(40, 420), sf::Vector2f(buttonWidth, buttonHeight)), // Bouton pour générer une carte aléatoire
+        new Button(*font, "Clean Map", sf::Vector2f(40, 490), sf::Vector2f(buttonWidth, buttonHeight)) // Bouton pour nettoyer la carte
     };
 }
 
@@ -119,7 +122,7 @@ void MainController::drawChecklist(Fenetre& F)
 {
     sf::RenderWindow& window = F.getWindow();
     for (auto& item : checklist) {
-        item.draw(window);
+        item.draw(window); // Dessine chaque élément de la checklist
     }
 }
 
@@ -128,6 +131,6 @@ void MainController::drawButtons(Fenetre& F)
 {
     sf::RenderWindow& window = F.getWindow();
     for (auto& button : Buttons) {
-        button->draw(window);
+        button->draw(window); // Dessine chaque bouton
     }
 }

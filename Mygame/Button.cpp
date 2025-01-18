@@ -1,6 +1,6 @@
 #include "Button.h"
-#include <cstdlib> // Pour std::rand et std::srand
-#include <ctime>   // Pour initialiser le générateur de nombres aléatoires
+#include <cstdlib> 
+#include <ctime>   
 #include "ChecklistItem.h"
 #include <queue>
 #include <vector>
@@ -8,14 +8,17 @@
 #include <cmath>
 #include<stack>
 
+//Constructeur
 Button::Button(sf::Font& font, const std::string& text, const sf::Vector2f& position, const sf::Vector2f& size)
 {
+    //Initialisation des valeur du conteneur du Bouton
     shape.setSize(size);
     shape.setFillColor(sf::Color::Blue);
     shape.setPosition(position);
     shape.setOutlineThickness(2);
     shape.setOutlineColor(sf::Color::Black);
 
+    //Initialisation du Texte du Bouton
     label.setFont(font);
     label.setString(text);
     label.setCharacterSize(20);
@@ -45,22 +48,30 @@ bool Button::isClicked(const sf::Vector2f& mousePos)
 // Gérer les clics sur le bouton
 void Button::onClick(std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist,Cell &start, Cell &end, sf::RenderWindow& window, bool& startPointDefined, bool& endPointDefined)
 {
-    if (label.getString() == "Map Aleatoire") {
+    //Si le ckic est sur Map Aléatoire
+    if (label.getString() == "Map Aleatoire") 
+    {
         startPointDefined = false;
         endPointDefined = false;
         generateRandomMap(grid,start,end); // Génère une carte aléatoire
     }
-    else if (label.getString() == "Clean Map") {
+    else
+        //Si le ckic est sur Clean Map
+    if (label.getString() == "Clean Map") 
+    {
         startPointDefined = false;
         endPointDefined = false;
         cleanMap(grid,start,end); // Nettoie la carte
     }
-    else if (label.getString() == "Traitement") {
+    else 
+        //Si le ckic est sur Traitement
+        if (label.getString() == "Traitement")
+        {
      
-        handleChecklistSelection(grid,checklist,start,end,window); // Traite les choix de la checklist
-        startPointDefined = false;
-        endPointDefined = false;
-    }
+            handleChecklistSelection(grid,checklist,start,end,window); // Traite les choix de la checklist
+            startPointDefined = false;
+            endPointDefined = false;
+        }
 }
 
 // Gérer la sélection de la checklist
@@ -69,36 +80,56 @@ void Button::handleChecklistSelection(std::vector<std::vector<Cell>>& grid, cons
     for (const auto& item : checklist)
     {
         if (item.isChecked()) { // Vérifie si l'élément est coché
-
+            //On verifie le choix coché est BFS
             if (item.getText() == "BFS") 
             {
-               
-                if (start.getType()==CellType::StartPoint && end.getType() ==CellType::EndPoint ) {
+               //On verifie si bouton de debut et de fin sont choisi
+                if (start.getType()==CellType::StartPoint && end.getType() ==CellType::EndPoint ) 
+                {
                   
-                    bfs(grid, start, end,window);
+                    bfs(grid, start, end,window);//On lance le BFS
                  
-                    start.setType(CellType::None);
-                    end.setType(CellType::None);
+                    start.setType(CellType::None);//A la fin on renitailise le debut
+                    end.setType(CellType::None);//A la fin on renitailise la fin
 
                 }
                
             }
+            //On verifie le choix coché est DFS
             else if (item.getText() == "DFS")
             {
-                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint) {
-                    dfs(grid, start, end,window);
+                //On verifie si bouton de debut et de fin sont choisi
+                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
+                {
+                    dfs(grid, start, end,window); //On lance le DFS
+                    start.setType(CellType::None);//A la fin on renitailise le debut
+                    end.setType(CellType::None);//A la fin on renitailise la fin
+
                 }
             }
-            else if (item.getText() == "Dijkstra")
+            else 
+                //On verifie le choix coché est Dijkstra
+            if (item.getText() == "Dijkstra")
             {
-                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint) {
-                    dijkstra(grid, start, end, window);
+                //On verifie si bouton de debut et de fin sont choisi
+                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint) 
+                {
+                    dijkstra(grid, start, end, window); //On lance  dijsktra
+                    start.setType(CellType::None);//A la fin on renitailise le debut
+                    end.setType(CellType::None);//A la fin on renitailise la fin
                 }
             }
-            else if (item.getText() == "A_star") 
+            else 
+                //On verifie le choix coché est A_star
+
+            if (item.getText() == "A_star") 
             {
-                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint) {
-                    astar(grid, start, end, window);
+                //On verifie si bouton de debut et de fin sont choisi
+                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
+                {
+                    astar(grid, start, end, window); //on mlance A*
+                    start.setType(CellType::None);//A la fin on renitailise le debut
+                    end.setType(CellType::None);//A la fin on renitailise la fin
                 }
             }
         }
@@ -138,28 +169,29 @@ void Button::cleanMap(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& e
     for (auto& row : grid) {
         for (auto& cell : row) {
             cell.clean();
-            cell.setType(CellType::None); // Réinitialise la cellule
         }
     }
 }
   
 
 
-
+//Algorithm pour le parcour en largeur
 void Button::bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window)
 {
     std::queue<Cell*> queue;
     sf::Clock clock;
     sf::Color amber(255, 191, 0); // RGB pour ambre
-  //  start.visited = true;
-    grid[start.indexX][start.indexY].setVisited();
-    queue.push(&grid[start.indexX][start.indexY]);
+ 
 
+    grid[start.indexX][start.indexY].setVisited();//Mettre le debut comme dejà visité
+    queue.push(&grid[start.indexX][start.indexY]); //Mettre l'adresse de debut dans la queue
+
+   // Tant que la queue n'est pas vide on parcourt tous les elements 
     while (!queue.empty())
     {
         // Gérer le délai pour rendre l'animation progressive
         while (clock.getElapsedTime().asMilliseconds() < 20) {
-            // Attendre un petit moment (ajuster les millisecondes si nécessaire)
+            // Attendre un petit moment 
         }
         clock.restart();
 
@@ -178,7 +210,7 @@ void Button::bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
                 neighbor->setparent (current); // Définit le parent pour retracer le chemin
                 if (*neighbor == end)
                 {
-                   // tracePath(end); // Trace le chemin
+                    // Trace le chemin
                     animatePath(&end, window, 0.2f,grid);
                     return;
                 }
@@ -204,6 +236,7 @@ void Button::bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
     }
 }
 
+//Algorithm pour le parcour en profondeur
 
 void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window)
 {
@@ -212,16 +245,16 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
     sf::Clock clock;
 
     sf::Color amber(255, 191, 0); // RGB pour ambre
-    //  start.visited = true;
-    grid[start.indexX][start.indexY].setVisited();
-    Stak.push(&grid[start.indexX][start.indexY]);
+   
+    grid[start.indexX][start.indexY].setVisited();//Mettre le debut comme dejà visité
+    Stak.push(&grid[start.indexX][start.indexY]);//Mettre le debut dans la pile
     
 
     while (!Stak.empty())
     {
         // Gérer le délai pour rendre l'animation progressive
         while (clock.getElapsedTime().asMilliseconds() < 20) {
-            // Attendre un petit moment (ajuster les millisecondes si nécessaire)
+            // Attendre un petit moment 
         }
         clock.restart();
 
@@ -238,9 +271,10 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
 
                 neighbor->setVisited();
                 neighbor->setparent(current); // Définit le parent pour retracer le chemin
+                //Si la fin est trouvée
                 if (*neighbor == end)
                 {
-                    // tracePath(end); // Trace le chemin
+                    // Trace le chemin
                     animatePath(&end, window, 0.2f, grid);
                     return;
                 }
@@ -266,17 +300,18 @@ void Button::dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, s
     }
 }
 
+//Methode pour le parcour des pluscourts chemin avec dijkstra
 
-
-void Button::dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window) {
+void Button::dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window) 
+{
    
     auto compare = [](Cell* a, Cell* b) {
-        return a->getdistance() > b->getdistance(); // Comparer par coût croissant
+        return a->getdistance() > b->getdistance(); // Comparer par distance croissant
         };
     sf::Clock clock;
-    std::priority_queue<Cell*, std::vector<Cell*>, decltype(compare)> pq(compare);
+    std::priority_queue<Cell*, std::vector<Cell*>, decltype(compare)> pq(compare); //Priorité queue pour ordonner les distances
 
-    grid[start.indexX][start.indexY].setdistance(0); // Le coût du point de départ est 0
+    grid[start.indexX][start.indexY].setdistance(0); //la distance du point de départ est 0
     grid[start.indexX][start.indexY].setVisited();
     pq.push(&grid[start.indexX][start.indexY]);
 
@@ -296,13 +331,14 @@ void Button::dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& e
         {
             if (!neighbor->getVisited() && neighbor->getType() != CellType::Wall)
             {
-                int newCost = current->getdistance() + 1; // Supposons un coût uniforme
+                int newCost = current->getdistance() + 1; // Supposons la distance uniforme
                 if (newCost < neighbor->getdistance()) 
                 {
                     neighbor->setdistance(newCost);
                     neighbor->setparent(current);
                     neighbor->setVisited();
 
+                    //Si la fin est trouvée
                     if (*neighbor==end) {
                         animatePath(&end, window, 0.2f,grid);
                         return;
@@ -335,8 +371,9 @@ void Button::dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& e
     }
 }
 
-
-std::vector<Cell*> Button::getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell) {
+//Methode qui retourne les voisins d'une case
+std::vector<Cell*> Button::getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell) 
+{
     std::vector<Cell*> neighbors;
     int x = cell.indexX;
     int y = cell.indexY;
@@ -352,7 +389,7 @@ std::vector<Cell*> Button::getNeighbors(std::vector<std::vector<Cell>>& grid, Ce
 }
 
 
-
+//Methode pour l'animation du chemin trouvé
 void Button::animatePath(Cell* end, sf::RenderWindow& window, float durationPerCell, std::vector<std::vector<Cell>>& grid)
 {
     sf::Clock clock;
@@ -409,13 +446,12 @@ void Button::animatePath(Cell* end, sf::RenderWindow& window, float durationPerC
     }
 }
 
-
+//Methode pour le parcourt avec A*
 void Button::astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window)
 {
     sf::Clock clock;
     auto heuristic = [](Cell* a, Cell* b) {
        return sqrt(pow(a->indexX-b->indexX,2)+pow(a->indexY-b->indexY,2)) ; // Distance Eucludienne
-        // return abs(a->indexX - b->indexX) + abs(a->indexY - b->indexY);// Distance de Manathan
         };
 
     auto compare = [](Cell* a, Cell* b) {
@@ -436,14 +472,9 @@ void Button::astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end,
 
         // Gérer le délai pour rendre l'animation progressive
         while (clock.getElapsedTime().asMilliseconds() < 20) {
-            // Attendre un petit moment (ajuster les millisecondes si nécessaire)
+            // Attendre un petit moment
         }
         clock.restart();
-
-       
-
-     
-
         // Parcours des voisins
         for (auto &neighbor : getNeighbors(grid, *current)) 
         {
