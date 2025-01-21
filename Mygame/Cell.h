@@ -8,8 +8,6 @@ class Cell {
 private:
     // Propriétés privées
     float cellesize = 20.0f; // Taille par défaut de la cellule
-    float posX;             // Position X de la cellule
-    float posY;             // Position Y de la cellule
     int height;             // Hauteur de la cellule
     int width;              // Largeur de la cellule
     float heuristic = 0.0f; // Heuristique (utilisé pour A*)
@@ -22,6 +20,8 @@ public:
     // Propriétés publiques
     int indexX = -1;        // Indice X dans la grille
     int indexY = -1;        // Indice Y dans la grille
+    float posX;             // Position X de la cellule
+    float posY;             // Position Y de la cellule
     sf::Color cellcolor = sf::Color::White; // Couleur actuelle de la cellule
     sf::RectangleShape cel;                // Représentation graphique de la cellule
 
@@ -81,7 +81,7 @@ public:
 
     // Récupère le type de la cellule
     CellType getType() const;
-
+    void setNotVisited();
     // Définit un nouveau type pour la cellule
     void setType(CellType newType);
 

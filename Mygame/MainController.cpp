@@ -59,7 +59,7 @@ void MainController::handleMouseClick(
     // Gestion des clics sur les boutons
     for (auto& button : Buttons) {
         if (button->isClicked(mousePos)) { // Vérifie si un bouton a été cliqué
-            button->onClick(grid, checklist, start, end, window, startPointDefined, endPointDefined); // Exécute l'action associée
+            button->onClick(Buttons,grid, checklist, start, end, window, startPointDefined, endPointDefined); // Exécute l'action associée
             return; // Arrête la vérification si un bouton a été cliqué
         }
     }

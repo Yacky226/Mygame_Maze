@@ -23,32 +23,31 @@ public:
     bool isClicked(const sf::Vector2f& mousePos);
 
     //Gestionnaire de clic d'un bouton
-    void onClick(std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist,Cell &start,Cell &end, sf::RenderWindow& window, bool& startPointDefined, bool& endPointDefined);
+    void onClick(std::vector<Button*> &Buttons,std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist,Cell &start,Cell &end, sf::RenderWindow& window, bool& startPointDefined, bool& endPointDefined);
 
     //Fonction pour generer une Map aléatoire
-    void generateRandomMap(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    void generateRandomMap(std::vector<std::vector<Cell>>& grid);
 
     //Gestionnaire des choix des checkbox
-    void handleChecklistSelection(std::vector<std::vector<Cell>>& grid,const std::vector<ChecklistItem>& checklist,Cell &start, Cell &end, sf::RenderWindow& window);
+    void handleChecklistSelection(std::vector<Button*>& Buttons,std::vector<std::vector<Cell>>& grid,const std::vector<ChecklistItem>& checklist,Cell &start, Cell &end, sf::RenderWindow& window);
     
     //Fonction qui Netoie la Map pour une Map sans obstacle
-    void cleanMap(std::vector<std::vector<Cell>>& grid,Cell &start, Cell &end);
+    void cleanMap(std::vector<std::vector<Cell>>& grid);
     
     //Methode de parcours en largeur
-    void bfs(std::vector<std::vector<Cell>>& grid, Cell &start, Cell &end, sf::RenderWindow& window);
+    void bfs(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, sf::RenderWindow& window);
 
     //Methode de parcours en prondeur
-    void dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
+    void dfs(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, sf::RenderWindow& window);
 
     //Methode de parcours des pluscourts chemins avec dijskra
-    void dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
-
+    void dijkstra(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, sf::RenderWindow& window);
     //Methode qui retourne les voisins d'une case
     std::vector<Cell*> getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell);
 
     //Methode pour animer le Chemin trouver
-    void animatePath(Cell* end, sf::RenderWindow& window, float durationPerCell, std::vector<std::vector<Cell>>& grid);
+    void animatePath(std::vector<Button*>& Buttons, const std::vector<ChecklistItem>& checklist, Cell* end, sf::RenderWindow& window, float durationPerCell, std::vector<std::vector<Cell>>& grid);
   
     //Methode de parcours A*
-    void astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, sf::RenderWindow& window);
+    void astar(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, const std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, sf::RenderWindow& window);
 };

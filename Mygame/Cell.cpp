@@ -174,6 +174,7 @@ void Cell::clean()
     this->type = CellType::None;
     this->visited = false;
     this->cel.setFillColor(this->cellcolor);
+    distance = std::numeric_limits<float>::infinity();
 }
 
 // Définit la cellule comme mur
@@ -200,4 +201,11 @@ void Cell::setType(CellType newType)
 CellType Cell::getType() const
 {
     return type;
+}
+
+void Cell::setNotVisited()
+{
+    visited = false;
+    type = CellType::None;
+    cellcolor = sf::Color::White;
 }
