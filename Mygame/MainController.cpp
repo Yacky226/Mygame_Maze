@@ -1,6 +1,7 @@
 #include "MainController.h"
 #include <iostream>
 #include <algorithm>
+#include "DrawInterface.h"
 
 // Constructeur
 MainController::MainController(Fenetre& F, int rows, int cols)
@@ -37,12 +38,7 @@ void MainController::initializeGrid(Fenetre& F)
 // Dessiner la grille
 void MainController::drawGrid(Fenetre& F)
 {
-    sf::RenderWindow& window = F.getWindow();
-    for (const auto& row : grid) { // Parcourt chaque ligne de la grille
-        for (const auto& cell : row) { // Parcourt chaque cellule
-            window.draw(cell.cel); // Dessine la cellule dans la fenêtre
-        }
-    }
+	DrawInterface::drawgrid(F, grid);
 }
 
 // Gestion des clics de souris
@@ -59,7 +55,7 @@ void MainController::handleMouseClick(
     // Gestion des clics sur les boutons
     for (auto& button : Buttons) {
         if (button->isClicked(mousePos)) { // Vérifie si un bouton a été cliqué
-            button->onClick(Buttons,grid, checklist, start, end, window, startPointDefined, endPointDefined); // Exécute l'action associée
+            button->onClick(Buttons,grid, checklist, start, end,F, startPointDefined, endPointDefined); // Exécute l'action associée
             return; // Arrête la vérification si un bouton a été cliqué
         }
     }
@@ -120,17 +116,11 @@ void MainController::initializeButtons()
 // Dessiner la checklist
 void MainController::drawChecklist(Fenetre& F)
 {
-    sf::RenderWindow& window = F.getWindow();
-    for (auto& item : checklist) {
-        item.draw(window); // Dessine chaque élément de la checklist
-    }
+	DrawInterface::drawChecklist(F, checklist);
 }
 
 // Dessiner les boutons
 void MainController::drawButtons(Fenetre& F)
 {
-    sf::RenderWindow& window = F.getWindow();
-    for (auto& button : Buttons) {
-        button->draw(window); // Dessine chaque bouton
-    }
+	DrawInterface::drawButtons(F, Buttons);
 }
