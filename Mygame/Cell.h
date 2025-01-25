@@ -81,7 +81,7 @@ public:
 
     // Récupère le type de la cellule
     CellType getType() const;
-    void setNotVisited();
+
     // Définit un nouveau type pour la cellule
     void setType(CellType newType);
 

@@ -6,7 +6,7 @@ ChecklistItem::ChecklistItem(sf::Font& font, const std::string& text, const sf::
 {
     // Configuration de la case à cocher
     checkbox.setSize(sf::Vector2f(20, 20)); // Dimensions de la case
-    checkbox.setFillColor(sf::Color::White); // Couleur de remplissage (blanc par défaut)
+    checkbox.setFillColor(sf::Color::White); // Couleur de remplissage blanc par défaut
     checkbox.setOutlineThickness(2); // Épaisseur du contour
     checkbox.setOutlineColor(sf::Color::Black); // Couleur du contour
     checkbox.setPosition(position); // Position de la case à cocher
@@ -28,10 +28,10 @@ void ChecklistItem::draw(sf::RenderWindow& window)
     // Dessine l'étiquette associée
     window.draw(label);
 
-    // Si la case est cochée, dessiner un indicateur (tick)
+    // Si la case est cochée, dessiner un indicateur
     if (checked)
     {
-        sf::RectangleShape tick(sf::Vector2f(14, 14)); // Indicateur (tick)
+        sf::RectangleShape tick(sf::Vector2f(14, 14)); // Indicateur
         tick.setFillColor(sf::Color::Green); // Couleur de l'indicateur
         tick.setPosition(checkbox.getPosition().x + 3, checkbox.getPosition().y + 3); // Position centrée dans la case
         window.draw(tick);
@@ -41,7 +41,7 @@ void ChecklistItem::draw(sf::RenderWindow& window)
 // Méthode pour récupérer le texte de l'étiquette
 std::string ChecklistItem::getText() const
 {
-    return label.getString().toAnsiString(); // Retourne le texte en format ANSI
+    return label.getString().toAnsiString(); // Retourne le texte
 }
 
 // Méthode pour vérifier si la case est cochée

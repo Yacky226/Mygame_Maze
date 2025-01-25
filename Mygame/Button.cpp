@@ -1,31 +1,26 @@
 #include "Button.h"
-#include <cstdlib> 
-#include <ctime>   
 #include "ChecklistItem.h"
 #include <vector>
-#include <limits>
-#include <cmath>
-#include<stack>
 #include "Pathfinding.h"
-#include"Animated.h"
+#include "Animated.h"
 
-//Constructeur
+// Constructeur de la classe Button
 Button::Button(sf::Font& font, const std::string& text, const sf::Vector2f& position, const sf::Vector2f& size)
 {
-    //Initialisation des valeur du conteneur du Bouton
-    shape.setSize(size);
-    shape.setFillColor(sf::Color::Blue);
-    shape.setPosition(position);
-    shape.setOutlineThickness(2);
-    shape.setOutlineColor(sf::Color::Black);
+    // Initialisation des propriétés du conteneur du bouton
+    shape.setSize(size); // Définir la taille du bouton
+    shape.setFillColor(sf::Color::Blue); // Définir la couleur de remplissage
+    shape.setPosition(position); // Positionner le bouton
+    shape.setOutlineThickness(2); // Définir l'épaisseur de la bordure
+    shape.setOutlineColor(sf::Color::Black); // Définir la couleur de la bordure
 
-    //Initialisation du Texte du Bouton
-    label.setFont(font);
-    label.setString(text);
-    label.setCharacterSize(20);
-    label.setFillColor(sf::Color::White);
+    // Initialisation des propriétés du texte du bouton
+    label.setFont(font); // Associer une police au texte
+    label.setString(text); // Définir le texte affiché sur le bouton
+    label.setCharacterSize(20); // Définir la taille du texte
+    label.setFillColor(sf::Color::White); // Définir la couleur du texte
 
-    // Centrer le texte dans le bouton
+    // Centrer le texte à l'intérieur du bouton
     sf::FloatRect textBounds = label.getLocalBounds();
     label.setPosition(
         position.x + (size.x - textBounds.width) / 2 - textBounds.left,
@@ -33,128 +28,127 @@ Button::Button(sf::Font& font, const std::string& text, const sf::Vector2f& posi
     );
 }
 
-// Dessiner le bouton
+// Dessiner le bouton sur la fenêtre
 void Button::draw(sf::RenderWindow& window)
 {
-    window.draw(shape);
-    window.draw(label);
+    window.draw(shape); // Dessiner le conteneur du bouton
+    window.draw(label); // Dessiner le texte du bouton
 }
 
-// Vérifier si le bouton est cliqué
+// Vérifier si le bouton a été cliqué
 bool Button::isClicked(const sf::Vector2f& mousePos)
 {
+    // Vérifie si la position de la souris se trouve dans les limites du bouton
     return shape.getGlobalBounds().contains(mousePos);
 }
 
 // Gérer les clics sur le bouton
-void Button::onClick(std::vector<Button*> &Buttons,std::vector<std::vector<Cell>>& grid, std::vector<ChecklistItem>& checklist,Cell &start, Cell &end,Fenetre &F, bool& startPointDefined, bool& endPointDefined)
+void Button::onClick(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, Fenetre& F, bool& startPointDefined, bool& endPointDefined)
 {
-    //Si le ckic est sur Map Aléatoire
-    if (label.getString() == "Map Aleatoire") 
+    // Si le texte du bouton est "Map Aléatoire", générer une carte aléatoire
+    if (label.getString() == "Map Aleatoire")
     {
         startPointDefined = false;
         endPointDefined = false;
-		DrawInterface::generateRandomMap(grid); // Génère une carte aléatoire
+        DrawInterface::generateRandomMap(grid); // Génère une carte aléatoire
     }
-    else
-        //Si le ckic est sur Clean Map
-    if (label.getString() == "Clean Map") 
+    // Si le texte du bouton est "Clean Map", nettoyer la carte
+    else if (label.getString() == "Clean Map")
     {
         startPointDefined = false;
         endPointDefined = false;
-		DrawInterface::cleanMap(grid); // Nettoie la carte
+        DrawInterface::cleanMap(grid); // Nettoie la carte
     }
-    else 
-        //Si le ckic est sur Traitement
-        if (label.getString() == "Traitement")
-        {
-     
-            handleChecklistSelection(Buttons,grid,checklist,start,end,F); // Traite les choix de la checklist
-            startPointDefined = false;
-            endPointDefined = false;
-        }
+    // Si le texte du bouton est "Traitement", traiter les options de la checklist
+    else if (label.getString() == "Traitement")
+    {
+        handleChecklistSelection(Buttons, grid, checklist, start, end, F); // Traite les choix de la checklist
+        startPointDefined = false;
+        endPointDefined = false;
+    }
 }
 
-// Gérer la sélection de la checklist
-void Button::handleChecklistSelection(std::vector<Button*>& Buttons,std::vector<std::vector<Cell>>& grid, std::vector<ChecklistItem>& checklist, Cell& start, Cell& end,Fenetre &F)
+// Gérer la sélection de la checklist et exécuter les algorithmes correspondants
+void Button::handleChecklistSelection(std::vector<Button*>& Buttons, std::vector<std::vector<Cell>>& grid, std::vector<ChecklistItem>& checklist, Cell& start, Cell& end, Fenetre& F)
 {
+    // Parcourir tous les éléments de la checklist
     for (const auto& item : checklist)
     {
-        if (item.isChecked()) { // Vérifie si l'élément est coché
-            //On verifie le choix coché est BFS
-            if (item.getText() == "BFS") 
+        // Vérifier si l'élément est coché
+        if (item.isChecked())
+        {
+            // Si l'élément coché est "BFS"
+            if (item.getText() == "BFS")
             {
-               //On verifie si bouton de debut et de fin sont choisi
-                if (start.getType()==CellType::StartPoint && end.getType() ==CellType::EndPoint ) 
-                {
-					std::pair<std::vector<Cell*>, std::vector<Cell*>> result = Pathfinding::bfs(grid, start, end);
-                    std::vector<Cell*> visitedOrder = result.first;
-                    std::vector<Cell*> finalPath = result.second;
-					Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
-					Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
-					
-					start.setType(CellType::None);//A la fin on renitailise le debut
-					end.setType(CellType::None);//A la fin on renitailise la fin
-                 
-                 
-                    start.setType(CellType::None);//A la fin on renitailise le debut
-                    end.setType(CellType::None);//A la fin on renitailise la fin
-
-                }
-               
-            }
-            //On verifie le choix coché est DFS
-            else if (item.getText() == "DFS")
-            {
-                //On verifie si bouton de debut et de fin sont choisi
+                // Vérifier que les points de départ et d'arrivée sont définis
                 if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
                 {
+                    // Exécuter l'algorithme BFS
+                    std::pair<std::vector<Cell*>, std::vector<Cell*>> result = Pathfinding::bfs(grid, start, end);
+                    std::vector<Cell*> visitedOrder = result.first; // Ordre des cellules visitées
+                    std::vector<Cell*> finalPath = result.second; // Chemin final trouvé
+
+                    // Animer les cellules visitées et le chemin final
+                    Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
+                    Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
+
+                    // Réinitialiser les types des points de départ et d'arrivée
+                    start.setType(CellType::None);
+                    end.setType(CellType::None);
+                }
+            }
+            // Si l'élément coché est "DFS"
+            else if (item.getText() == "DFS")
+            {
+                // Vérifier que les points de départ et d'arrivée sont définis
+                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
+                {
+                    // Exécuter l'algorithme DFS
                     std::pair<std::vector<Cell*>, std::vector<Cell*>> result = Pathfinding::dfs(grid, start, end);
                     std::vector<Cell*> visitedOrder = result.first;
                     std::vector<Cell*> finalPath = result.second;
 
-					Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
-					Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
-                    start.setType(CellType::None);//A la fin on renitailise le debut
-                    end.setType(CellType::None);//A la fin on renitailise la fin
+                    // Animer les cellules visitées et le chemin final
+                    Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
+                    Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
 
+                    // Réinitialiser les types des points de départ et d'arrivée
+                    start.setType(CellType::None);
+                    end.setType(CellType::None);
                 }
             }
-            else 
-                //On verifie le choix coché est Dijkstra
-            if (item.getText() == "Dijkstra")
+            // Si l'élément coché est "Dijkstra"
+            else if (item.getText() == "Dijkstra")
             {
-                //On verifie si bouton de debut et de fin sont choisi
-                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint) 
+                if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
                 {
                     std::pair<std::vector<Cell*>, std::vector<Cell*>> result = Pathfinding::dijkstra(grid, start, end);
                     std::vector<Cell*> visitedOrder = result.first;
                     std::vector<Cell*> finalPath = result.second;
 
-					Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
-					Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
-                    start.setType(CellType::None);//A la fin on renitailise le debut
-                    end.setType(CellType::None);//A la fin on renitailise la fin
+                    Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
+                    Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
+
+                    start.setType(CellType::None);
+                    end.setType(CellType::None);
                 }
             }
-            else 
-                //On verifie le choix coché est A_star
-
-            if (item.getText() == "A_star") 
+            // Si l'élément coché est "A_star"
+            else if (item.getText() == "A_star")
             {
-                //On verifie si bouton de debut et de fin sont choisi
                 if (start.getType() == CellType::StartPoint && end.getType() == CellType::EndPoint)
                 {
                     std::pair<std::vector<Cell*>, std::vector<Cell*>> result = Pathfinding::astar(grid, start, end);
                     std::vector<Cell*> visitedOrder = result.first;
                     std::vector<Cell*> finalPath = result.second;
-					Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
-					Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
-                    start.setType(CellType::None);//A la fin on renitailise le debut
-                    end.setType(CellType::None);//A la fin on renitailise la fin
+
+                    Animated::animateCels(visitedOrder, Buttons, grid, checklist, start, end, F);
+                    Animated::animatePath(finalPath, Buttons, checklist, &end, F, 0.1f, grid);
+
+                    start.setType(CellType::None);
+                    end.setType(CellType::None);
                 }
             }
         }
     }
 }
-

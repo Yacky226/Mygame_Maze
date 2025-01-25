@@ -1,63 +1,65 @@
 #include "DrawInterface.h"
+#include <ctime>
+#include <limits>
+#include <cmath>
+
+// Dessiner la grille
 void DrawInterface::drawgrid(Fenetre& F, std::vector<std::vector<Cell>>& grid)
 {
-	sf::RenderWindow& window = F.getWindow();
-	for (auto& row : grid) {
-		for (auto& cell : row) {
-			window.draw(cell.cel);
-		}
-	}
+    sf::RenderWindow& window = F.getWindow(); // Récupération de la fenêtre de rendu
+    for (auto& row : grid) { // Parcourir chaque ligne de la grille
+        for (auto& cell : row) { // Parcourir chaque cellule dans la ligne
+            window.draw(cell.cel); // Dessiner la forme graphique associée à la cellule
+        }
+    }
 }
+
 // Dessiner la checklist
-void DrawInterface::drawChecklist(Fenetre& F,std::vector<ChecklistItem>& checklist)
+void DrawInterface::drawChecklist(Fenetre& F, std::vector<ChecklistItem>& checklist)
 {
-    sf::RenderWindow& window = F.getWindow();
-    for (auto& item : checklist) {
-        item.draw(window); // Dessine chaque élément de la checklist
+    sf::RenderWindow& window = F.getWindow(); // Récupération de la fenêtre de rendu
+    for (auto& item : checklist) { // Parcourir chaque élément de la checklist
+        item.draw(window); // Dessiner l'élément graphique dans la fenêtre
     }
 }
 
 // Dessiner les boutons
 void DrawInterface::drawButtons(Fenetre& F, std::vector<Button*>& Buttons)
 {
-    sf::RenderWindow& window = F.getWindow();
-    for (auto& button : Buttons) {
-        button->draw(window); // Dessine chaque bouton
+    sf::RenderWindow& window = F.getWindow(); // Récupération de la fenêtre de rendu
+    for (auto& button : Buttons) { // Parcourir chaque bouton
+        button->draw(window); // Dessiner le bouton graphique dans la fenêtre
     }
 }
+
 // Générer une carte aléatoire
 void DrawInterface::generateRandomMap(std::vector<std::vector<Cell>>& grid)
 {
-    std::srand(static_cast<unsigned int>(std::time(nullptr))); // Initialisation
+    // Initialisation de la graine du générateur aléatoire avec le temps actuel
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    for (auto& row : grid)
-    {
-        for (auto& cell : row)
-        {
-            if (std::rand() % 4 == 0) { // 25% de chances de placer un mur
-                cell.clean();
-                cell.setType(CellType::Wall);
+    for (auto& row : grid) { // Parcourir chaque ligne de la grille
+        for (auto& cell : row) { // Parcourir chaque cellule dans la ligne
+            if (std::rand() % 4 == 0) { // 25% de chance de transformer la cellule en mur
+                cell.clean(); // Nettoyer les propriétés de la cellule
+                cell.setType(CellType::Wall); // Définir la cellule comme un mur
             }
-            else
-            {
-                cell.clean();
-                cell.setType(CellType::None); // Cellule vide
+            else {
+                cell.clean(); // Nettoyer les propriétés de la cellule
+                cell.setType(CellType::None); // Définir la cellule comme vide
             }
-            cell.setdistance(std::numeric_limits<float>::infinity()); // Réinitialisation des distances
+            // Réinitialiser la distance pour chaque cellule à l'infini
+            cell.setdistance(std::numeric_limits<float>::infinity());
         }
     }
-
 }
 
-
 // Nettoyer la carte
-
 void DrawInterface::cleanMap(std::vector<std::vector<Cell>>& grid)
-
 {
-    for (auto& row : grid) {
-        for (auto& cell : row) {
-            cell.clean();
+    for (auto& row : grid) { // Parcourir chaque ligne de la grille
+        for (auto& cell : row) { // Parcourir chaque cellule dans la ligne
+            cell.clean(); // Réinitialiser les propriétés de la cellule
         }
     }
 }

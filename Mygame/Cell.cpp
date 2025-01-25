@@ -1,53 +1,52 @@
-// Inclusion des en-têtes nécessaires
 #include "Cell.h"
-#include<iostream>
+#include <limits> 
 
-// Constructeur avec paramètres : initialise les propriétés de la cellule (position, taille, couleurs, type, etc.)
+// Constructeur avec paramètres : initialise les propriétés de la cellule 
 Cell::Cell(int abs, int ord, float x, float y, int w, int h)
     : posX(x), posY(y), width(w), height(h), cellcolor(sf::Color::White), type(None), indexX(abs), indexY(ord)
 {
     // Configuration de l'apparence graphique de la cellule
     cel.setSize(sf::Vector2f(w, h));       // Définit la taille du rectangle SFML
-    cel.setPosition(sf::Vector2f(x, y));  // Position initiale
-    cel.setFillColor(sf::Color::White);   // Couleur de remplissage par défaut
+    cel.setPosition(sf::Vector2f(x, y));  // Position initiale de la cellule sur la fenêtre
+    cel.setFillColor(sf::Color::White);   // Couleur de remplissage initiale
     cel.setOutlineThickness(2);           // Épaisseur des contours
     cel.setOutlineColor(sf::Color::Black); // Couleur des contours
 }
 
-// Constructeur par défaut : initialise une cellule avec des valeurs par défaut
+// Constructeur par défaut : initialise une cellule avec des valeurs minimales par défaut
 Cell::Cell() : posX(0), posY(0), width(10), height(10), cellcolor(sf::Color::White), type(None) {}
 
 // Constructeur par copie : copie les attributs d'une autre cellule
 Cell::Cell(const Cell& C)
 {
-    type = C.type;               // Type de la cellule
-    cellcolor = C.cellcolor;     // Couleur
-    cel = C.cel;                 // Rectangle graphique
+    type = C.type;               // Type de la cellule (None, StartPoint, EndPoint, Wall)
+    cellcolor = C.cellcolor;     // Couleur actuelle de la cellule
+    cel = C.cel;                 // Rectangle graphique SFML
     posX = C.posX;               // Position X
     posY = C.posY;               // Position Y
-    height = C.height;           // Hauteur
-    width = C.width;             // Largeur
-    heuristic = C.heuristic;     // Heuristique (utilisée pour les algorithmes de cheminement)
-    parent = C.parent;           // Parent dans un chemin (algorithmes de graphe)
-    distance = C.distance;       // Distance calculée
+    height = C.height;           // Hauteur de la cellule
+    width = C.width;             // Largeur de la cellule
+    heuristic = C.heuristic;     // Heuristique (utilisée pour l'algorithme A*)
+    parent = C.parent;           // Parent dans le chemin 
+    distance = C.distance;       // Distance calculée depuis le départ
     visited = C.visited;         // État visité ou non
-    indexX = C.indexX;           // Index X dans une grille
-    indexY = C.indexY;           // Index Y dans une grille
+    indexX = C.indexX;           // indice X dans une grille
+    indexY = C.indexY;           // indice Y dans une grille
 }
 
-// Définit le parent de la cellule (utilisé pour suivre un chemin)
+// Définit le parent de la cellule utilisé pour reconstruire un chemin
 void Cell::setparent(Cell* c)
 {
     this->parent = c;
 }
 
-// Récupère le parent de la cellule
+//Récupère le parent de la cellule
 Cell* Cell::getparent()
 {
     return parent;
 }
 
-// Définit la cellule comme visitée
+//Définit la cellule comme visitée
 void Cell::setVisited()
 {
     this->visited = true;
@@ -59,7 +58,7 @@ bool Cell::getVisited()
     return visited;
 }
 
-// Définit la distance associée à la cellule
+// Définit la distance associée à la cellule pour Dijkstra
 void Cell::setdistance(float dis)
 {
     distance = dis;
@@ -71,7 +70,7 @@ float Cell::getdistance()
     return distance;
 }
 
-// Définit la valeur heuristique de la cellule (pour A* ou autre algorithme)
+// Définit la valeur heuristique de la cellule utilisée pour A*
 void Cell::setheuristic(float dis)
 {
     heuristic = dis;
@@ -89,13 +88,13 @@ void Cell::updateColor()
     switch (type)
     {
     case StartPoint:
-        cellcolor = sf::Color::Green; // Couleur pour le point de départ
+        cellcolor = sf::Color::Green; // Point de départ
         break;
     case EndPoint:
-        cellcolor = sf::Color::Red;   // Couleur pour le point d'arrivée
+        cellcolor = sf::Color::Red;   // Point d'arrivée
         break;
     case Wall:
-        cellcolor = sf::Color::Black; // Couleur pour les murs
+        cellcolor = sf::Color::Black; // Mur
         break;
     case None:
         cellcolor = sf::Color::White; // Cellule vide
@@ -104,7 +103,7 @@ void Cell::updateColor()
     cel.setFillColor(cellcolor); // Applique la couleur au rectangle SFML
 }
 
-// Retourne une référence à la cellule
+// Retourne une référence à l'objet cellule
 Cell& Cell::getCell()
 {
     return *this;
@@ -117,40 +116,40 @@ void Cell::updateColor(const sf::Color& couleur)
     cel.setFillColor(cellcolor);
 }
 
-// Gère les clics sur la cellule pour modifier son type (point de départ, arrivée, mur, ou vide)
+// Gère les clics sur la cellule pour changer son type (point de départ, arrivée, mur ou vide)
 void Cell::handleClick(bool& startPointDefined, bool& endPointDefined, Cell& start, Cell& end)
 {
-    if (type == StartPoint) // Si la cellule est le point de départ, réinitialisez-la
+    if (type == StartPoint) // Si la cellule est le point de départ, on la réinitialise
     {
         type = None;
         startPointDefined = false;
         start = *this;
     }
-    else if (type == EndPoint) // Si la cellule est le point d'arrivée, réinitialisez-la
+    else if (type == EndPoint) // Si la cellule est le point d'arrivée, on la réinitialise
     {
         type = None;
         endPointDefined = false;
         end = *this;
     }
-    else if (type == Wall) // Si c'est un mur, réinitialisez-le
+    else if (type == Wall) // Si c'est un mur, on le réinitialise
     {
         type = None;
     }
     else
     {
-        if (!startPointDefined) // Définit la cellule comme point de départ si non défini
+        if (!startPointDefined) // Définit comme point de départ si non défini
         {
             type = StartPoint;
             startPointDefined = true;
             start = *this;
         }
-        else if (!endPointDefined) // Définit la cellule comme point d'arrivée si non défini
+        else if (!endPointDefined) // Définit comme point d'arrivée si non défini
         {
             type = EndPoint;
             endPointDefined = true;
             end = *this;
         }
-        else // Sinon, la cellule devient un mur
+        else // Sinon, transforme la cellule en mur
         {
             type = Wall;
         }
@@ -165,16 +164,16 @@ void Cell::SetColor(sf::Color& couleur)
     cel.setFillColor(cellcolor);
 }
 
-// Nettoie la cellule réinitialise ses paramètres par défaut
+// Réinitialise la cellule à son état par défaut
 void Cell::clean()
 {
-    this->cellcolor = sf::Color::White;
-    this->heuristic = 0.0f;
-    this->parent = nullptr;
-    this->type = CellType::None;
-    this->visited = false;
-    this->cel.setFillColor(this->cellcolor);
-    distance = std::numeric_limits<float>::infinity();
+    this->cellcolor = sf::Color::White; // Couleur par défaut
+    this->heuristic = 0.0f;            // Heuristique à zéro
+    this->parent = nullptr;            // Aucun parent
+    this->type = CellType::None;       // Type vide
+    this->visited = false;             // Non visité
+    this->cel.setFillColor(this->cellcolor); // Applique la couleur par défaut
+    distance = std::numeric_limits<float>::infinity(); // Distance infinie par défaut
 }
 
 // Définit la cellule comme mur
@@ -197,15 +196,8 @@ void Cell::setType(CellType newType)
     updateColor();
 }
 
-// Récupère le type de la cellule
+//Récupère le type de la cellule
 CellType Cell::getType() const
 {
     return type;
-}
-
-void Cell::setNotVisited()
-{
-    visited = false;
-    type = CellType::None;
-    cellcolor = sf::Color::White;
 }
