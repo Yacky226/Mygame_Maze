@@ -28,6 +28,4 @@ public:
     //Gestionnaire des choix des checkbox
     void handleChecklistSelection(std::vector<Button*>& Buttons,std::vector<std::vector<Cell>>& grid,std::vector<ChecklistItem>& checklist,Cell &start, Cell &end,Fenetre &F);
     
- 
-    
 };

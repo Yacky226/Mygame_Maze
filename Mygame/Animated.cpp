@@ -53,7 +53,7 @@ void Animated::animateCels(const std::vector<Cell*>& visitedOrder,std::vector<Bu
     // Animation des cellules visitées
     for (auto cell : visitedOrder)
     {
-        while (clock.getElapsedTime().asMilliseconds() < 50) {
+        while (clock.getElapsedTime().asMilliseconds() < 10) {
             // Attente pour l'animation
         }
         clock.restart();

@@ -17,13 +17,13 @@ MainController::MainController(Fenetre& F, int rows, int cols)
     grid.resize(rows, std::vector<Cell>(cols));
 
     // Initialise les différentes parties de l'application
-    initializeGrid(F);
+    initializeGrid();
     initializeChecklist();
     initializeButtons();
 }
 
 // Initialisation de la grille
-void MainController::initializeGrid(Fenetre& F)
+void MainController::initializeGrid()
 {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -78,8 +78,8 @@ void MainController::initializeChecklist()
 {
     // Chargement de la police
     sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) { // Chemin vers la police
-        std::cerr << "Erreur de chargement de la police pour les boutons !" << std::endl;
+    if (!font->loadFromFile("Fonts/arial.ttf")) { // Chemin vers la police
+        std::cerr << "Erreur de chargement de la police!" << std::endl;
         return;
     }
 
@@ -100,8 +100,8 @@ void MainController::initializeButtons()
 
     // Chargement de la police
     sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("C:/Windows/Fonts/arial.ttf")) { // Chemin vers la police
-        std::cerr << "Erreur de chargement de la police pour les boutons !" << std::endl;
+    if (!font->loadFromFile("Fonts/arial.ttf")) { // Chemin vers la police
+        std::cerr << "Erreur de chargement de la police !" << std::endl;
         return;
     }
 

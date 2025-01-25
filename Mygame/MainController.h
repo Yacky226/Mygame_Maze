@@ -24,7 +24,7 @@ public:
     MainController(Fenetre& F, int rows, int cols);
 
     // Méthode pour initialiser la grille
-    void initializeGrid(Fenetre& F);
+    void initializeGrid();
 
     // Méthode pour dessiner la grille dans la fenêtre
     void drawGrid(Fenetre& F);
