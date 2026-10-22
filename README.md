@@ -167,3 +167,8 @@ les étapes suivantes.
 Documentation : [SFML sous Linux](https://www.sfml-dev.org/tutorials/2.6/getting-started/linux/),
 [Compose Watch](https://docs.docker.com/compose/how-tos/file-watch/),
 [noVNC](https://github.com/novnc/noVNC).
+
+## Démonstrations et diagrammes
+
+Le diagramme de packages, la vidéo de démonstration et les explications du jeu
+se trouvent dans [Demo_et_explication_jeu](Demo_et_explication_jeu/).
