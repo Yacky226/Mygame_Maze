@@ -287,6 +287,11 @@ FakesAssemblies/
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
 node_modules/
+apps/web/dist/
+apps/web/public/engine/
+apps/web/public/licenses/
+apps/web/test-results/
+apps/web/playwright-report/
 
 # Visual Studio 6 build log
 *.plg
@@ -364,3 +369,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+./Demo_et_explication_jeu

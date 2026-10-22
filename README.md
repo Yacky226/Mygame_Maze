@@ -1,12 +1,37 @@
 # Maze / Mygame
 
-Application C++ / SFML pour visualiser BFS, DFS, Dijkstra et A* sur une grille
-de 30 lignes et 50 colonnes.
+Atelier de recherche de chemin avec un moteur C++20, une interface web
+React/TypeScript/PixiJS et le jeu SFML historique. BFS, DFS, Dijkstra et A*
+partagent le même moteur.
+
+## Atelier web
+
+```powershell
+docker compose up --build -d --wait web
+```
+
+Ouvrir **[Maze Studio](http://localhost:8080)** : dessin des murs et terrains,
+départ/arrivée, diagonales, scénarios, pause, pas à pas, vitesse, résultats et
+import/export JSON. Les recherches s'exécutent dans un Worker WebAssembly.
+Le premier build télécharge le SDK et peut prendre plusieurs minutes.
+
+Voir [le guide de l'atelier web](docs/WEB_STUDIO.md) pour les raccourcis,
+le développement, les tests et les limites du format de projet.
 
 Le [plan directeur Maze Studio](PLAN_DIRECTEUR_MAZE_STUDIO.md) décrit en détail
 la cible du projet : choix technologiques, architecture, modes, graphismes,
 algorithmes, qualité, migration et backlog avec critères d'acceptation.
 Il distingue les fonctions actuelles des évolutions proposées.
+
+## Modernisation en cours
+
+Le premier lot introduit un moteur **C++20 indépendant de SFML**, des recherches
+isolées et testables, les terrains pondérés dans le moteur, une CLI et des tests
+Catch2. Le jeu existant utilise ce moteur ; départ, arrivée et murs sont conservés
+entre les traitements. Voir [le guide du moteur](docs/ENGINE.md) et
+[la décision d'architecture](docs/adr/0001-extract-core-first.md).
+Le [suivi de modernisation](docs/MODERNIZATION_STATUS.md) précise ce qui est livré
+et le contenu du prochain lot.
 
 ## Lancer avec Docker
 
@@ -77,9 +102,8 @@ Visual Studio et les vidéos de démonstration sont exclus du contexte Docker.
 Les fichiers Windows du projet ne sont pas montés dans le conteneur et aucun
 binaire Linux n'est écrit dans le dossier source.
 
-Les sources historiques sont en Windows-1252 : CMake configure GCC pour les
-lire ainsi. Conserver cet encodage pour les sources actuelles ; une migration
-globale vers UTF-8 pourra être faite séparément.
+Les sources ont été migrées vers UTF-8. Utiliser cet encodage pour les nouveaux
+fichiers et un compilateur C++20 pour le moteur et son adaptateur SFML.
 
 ## Utilisation du jeu
 
@@ -92,8 +116,9 @@ globale vers UTF-8 pourra être faite séparément.
 **Map Aleatoire** remplace la grille par environ 25 % de murs. Placer ensuite
 le départ et l'arrivée. **Clean Map** efface toute la grille.
 
-Actuellement, utiliser **Clean Map** ou **Map Aleatoire** avant une nouvelle
-recherche : l'état des cellules explorées n'est pas réinitialisé automatiquement.
+Il est possible de relancer un algorithme ou d'en changer sur la même carte :
+chaque recherche possède un contexte neuf et efface l'ancienne visualisation.
+**Clean Map** reste réservé à l'effacement complet de la carte.
 Les animations bloquent les interactions jusqu'à leur fin. Ces comportements
 existants restent à améliorer.
 

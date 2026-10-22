@@ -18,10 +18,19 @@ TextScenario read_text_scenario(std::istream& input) {
         if (++bytes > max_input_bytes) throw std::invalid_argument("Map file exceeds 4 MiB");
         if (character == '\n') {
             if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.empty() || (!rows.empty() && line.size() != rows.front().size())) {
+                throw std::invalid_argument("Map rows must be nonempty and have equal widths");
+            }
+            if (static_cast<std::uint64_t>(rows.size() + 1) * line.size() > GridMap::max_cells) {
+                throw std::invalid_argument("Map exceeds the cell limit");
+            }
             rows.push_back(std::move(line));
             line.clear();
         } else {
             line.push_back(character);
+            if (line.size() > GridMap::max_cells + 1) {
+                throw std::invalid_argument("Map line exceeds the cell limit");
+            }
         }
     }
     if (input.bad()) throw std::runtime_error("Unable to read map file");
@@ -32,7 +41,7 @@ TextScenario read_text_scenario(std::istream& input) {
     if (rows.empty() || rows.front().empty()) throw std::invalid_argument("Map must not be empty");
     const auto width = rows.front().size();
     if (width > GridMap::max_cells || rows.size() > GridMap::max_cells ||
-        width * rows.size() > GridMap::max_cells) {
+        static_cast<std::uint64_t>(width) * rows.size() > GridMap::max_cells) {
         throw std::invalid_argument("Map exceeds the cell limit");
     }
     GridMap map(static_cast<std::uint32_t>(width), static_cast<std::uint32_t>(rows.size()));

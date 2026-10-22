@@ -9,6 +9,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Cache the pinned test framework separately from application source changes.
+COPY cmake/ /test-deps-src/cmake/
+RUN cmake -S /test-deps-src/cmake/dependencies -B /test-deps-build \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/maze-test-deps \
+    && cmake --build /test-deps-build --parallel 2 \
+    && cmake --install /test-deps-build
+ENV CMAKE_PREFIX_PATH=/opt/maze-test-deps
+
 WORKDIR /src
 COPY CMakeLists.txt ./
 COPY cmake/ ./cmake/

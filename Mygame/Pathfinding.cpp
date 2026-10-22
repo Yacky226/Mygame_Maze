@@ -10,7 +10,7 @@ Pathfinding::Result Pathfinding::run(std::vector<std::vector<Cell>>& grid,
     const auto rows = grid.size();
     const auto cols = grid.front().size();
     if (cols > maze::GridMap::max_cells || rows > maze::GridMap::max_cells ||
-        rows * cols > maze::GridMap::max_cells ||
+        static_cast<std::uint64_t>(rows) * cols > maze::GridMap::max_cells ||
         std::any_of(grid.begin(), grid.end(), [cols](const auto& row) { return row.size() != cols; })) return {};
     auto valid = [&](const Cell& cell) {
         return cell.indexX >= 0 && cell.indexY >= 0 &&
@@ -71,6 +71,8 @@ std::vector<Cell*> Pathfinding::getNeighbors(std::vector<std::vector<Cell>>& gri
     std::vector<Cell*> neighbors;
     const int row = cell.indexX;
     const int col = cell.indexY;
+    if (row < 0 || col < 0 || static_cast<std::size_t>(row) >= grid.size() ||
+        static_cast<std::size_t>(col) >= grid[row].size()) return neighbors;
     auto add = [&](int r, int c) {
         if (r >= 0 && c >= 0 && static_cast<std::size_t>(r) < grid.size() &&
             static_cast<std::size_t>(c) < grid[r].size()) neighbors.push_back(&grid[r][c]);

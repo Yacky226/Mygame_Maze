@@ -1,0 +1,44 @@
+name: Web studio
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.20.0
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Native CLI for parity
+        run: |
+          cmake -S . -B build/web-native -DCMAKE_BUILD_TYPE=Release -DMAZE_BUILD_LEGACY=OFF -DBUILD_TESTING=OFF
+          cmake --build build/web-native --parallel 2
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund
+      - name: Build WebAssembly with the pinned SDK
+        working-directory: apps/web
+        run: npm run wasm
+      - name: Model and native-WASM parity tests
+        working-directory: apps/web
+        env:
+          MAZE_CLI: ${{ github.workspace }}/build/web-native/apps/cli/maze_cli
+        run: npm test
+      - name: Type check and production build
+        working-directory: apps/web
+        run: npm run build
+      - name: Install Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Browser interaction tests
+        working-directory: apps/web
+        run: npm run test:e2e

@@ -66,7 +66,7 @@ struct SearchSession::Impl {
             result.metrics.discovered_unique = 1;
             push(request.start);
         } catch (const std::bad_alloc&) {
-            fail(SearchStatus::ResourceLimit, "Unable to allocate search context");
+            fail(SearchStatus::ResourceLimit, "Out of memory");
         }
     }
 
@@ -196,7 +196,7 @@ SearchStatus SearchSession::step(std::size_t max_operations) {
             impl_->result.status = SearchStatus::NoPath;
         }
     } catch (const std::bad_alloc&) {
-        impl_->fail(SearchStatus::ResourceLimit, "Unable to grow search buffers");
+        impl_->fail(SearchStatus::ResourceLimit, "Out of memory");
     }
     const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now() - started).count();

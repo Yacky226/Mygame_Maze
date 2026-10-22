@@ -79,12 +79,20 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Engine returned an invalid path or cost");
             }
         }
-        std::cout << "{\"schemaVersion\":1,\"engineVersion\":\"0.1.0\",\"algorithm\":"
-                  << quoted(maze::to_string(request.algorithm)) << ",\"status\":"
+        std::cout << "{\"schemaVersion\":1,\"engineVersion\":" << quoted(MAZE_ENGINE_VERSION)
+                  << ",\"algorithm\":" << quoted(maze::to_string(request.algorithm)) << ",\"status\":"
                   << quoted(maze::to_string(result.status)) << ",\"cost\":";
         if (result.status == maze::SearchStatus::Success) std::cout << '"' << result.cost << '"';
         else std::cout << "null";
-        std::cout << ",\"costUnit\":\"milli-step\",\"optimalCostGuaranteed\":"
+        std::cout << ",\"costUnit\":\"milli-step\",\"width\":" << scenario.map.width()
+                  << ",\"height\":" << scenario.map.height()
+                  << ",\"movement\":{\"connectivity\":"
+                  << (request.movement.connectivity == maze::Connectivity::Four ? 4 : 8)
+                  << ",\"cornerPolicy\":" << quoted(request.movement.corners == maze::CornerPolicy::ForbidCutting
+                      ? "forbid_cutting" : "allow_cutting")
+                  << ",\"orthogonalCost\":\"" << request.movement.orthogonal_cost
+                  << "\",\"diagonalCost\":\"" << request.movement.diagonal_cost
+                  << "\"},\"optimalCostGuaranteed\":"
                   << (result.optimal_cost_guaranteed ? "true" : "false")
                   << ",\"pathEdges\":" << (result.path.empty() ? 0 : result.path.size() - 1)
                   << ",\"path\":[";

@@ -17,3 +17,9 @@ Mygame/bin
 **/*.exe
 **/*.dll
 **/*.log
+**/node_modules
+apps/web/dist
+apps/web/public/engine
+apps/web/public/licenses
+apps/web/test-results
+apps/web/playwright-report

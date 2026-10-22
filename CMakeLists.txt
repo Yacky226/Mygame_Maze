@@ -3,8 +3,13 @@ project(MazeStudio VERSION 0.1.0 LANGUAGES CXX)
 
 option(MAZE_BUILD_LEGACY "Build the SFML application" ON)
 option(MAZE_BUILD_CLI "Build the headless command-line application" ON)
+option(MAZE_BUILD_WASM "Build the Emscripten browser engine" OFF)
 option(MAZE_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
 include(CTest)
+if(BUILD_TESTING)
+    include(cmake/TestDependencies.cmake)
+    include(Catch)
+endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(MAZE_ENABLE_SANITIZERS AND MSVC)
@@ -18,6 +23,14 @@ elseif(MAZE_ENABLE_SANITIZERS)
 endif()
 
 add_subdirectory(core)
+
+if(MAZE_BUILD_WASM)
+    if(NOT EMSCRIPTEN)
+        message(FATAL_ERROR "MAZE_BUILD_WASM requires the Emscripten toolchain (emcmake)")
+    endif()
+    target_compile_options(maze_core PRIVATE -fexceptions)
+    add_subdirectory(bindings/wasm)
+endif()
 
 if(MAZE_BUILD_CLI)
     add_subdirectory(apps/cli)

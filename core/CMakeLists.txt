@@ -9,7 +9,6 @@ else()
 endif()
 
 if(BUILD_TESTING)
-    include("${PROJECT_SOURCE_DIR}/cmake/TestDependencies.cmake")
     add_executable(maze_core_tests tests/grid_map_tests.cpp tests/search_tests.cpp)
     target_link_libraries(maze_core_tests PRIVATE maze::core Catch2::Catch2WithMain)
     include(Catch)

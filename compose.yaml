@@ -1,4 +1,29 @@
 services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    init: true
+    ports:
+      - "127.0.0.1:${MAZE_WEB_PORT:-8080}:8080"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./apps/web
+          ignore:
+            - node_modules/
+            - dist/
+            - public/engine/
+            - test-results/
+            - playwright-report/
+        - action: rebuild
+          path: ./core
+        - action: rebuild
+          path: ./bindings
+        - action: rebuild
+          path: ./CMakeLists.txt
+        - action: rebuild
+          path: ./docker/Dockerfile.web
   maze:
     build:
       context: .
