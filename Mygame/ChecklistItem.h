@@ -2,28 +2,29 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <vector>
 
-// Classe représentant un élément de checklist
+// Classe reprÃ©sentant un Ã©lÃ©ment de checklist
 class ChecklistItem
 {
 private:
-    sf::RectangleShape checkbox; // Case à cocher, représentée par un rectangle
-    sf::Text label;              // Texte associé à la case
-    bool checked;                // État de la case (true = cochée, false = non cochée)
+    sf::RectangleShape checkbox; // Case Ã  cocher, reprÃ©sentÃ©e par un rectangle
+    sf::Text label;              // Texte associÃ© Ã  la case
+    bool checked;                // Ã‰tat de la case (true = cochÃ©e, false = non cochÃ©e)
 
 public:
-    // Constructeur : initialise un élément de checklist avec une police, un texte et une position
+    // Constructeur : initialise un Ã©lÃ©ment de checklist avec une police, un texte et une position
     ChecklistItem(sf::Font& font, const std::string& text, const sf::Vector2f& position);
 
-    // Méthode pour dessiner la case et son texte dans la fenêtre SFML
+    // MÃ©thode pour dessiner la case et son texte dans la fenÃªtre SFML
     void draw(sf::RenderWindow& window);
 
-    // Méthode pour obtenir le texte de l'étiquette associée
+    // MÃ©thode pour obtenir le texte de l'Ã©tiquette associÃ©e
     std::string getText() const;
 
-    // Méthode pour vérifier si la case est cochée
+    // MÃ©thode pour vÃ©rifier si la case est cochÃ©e
     bool isChecked() const;
 
-    // Méthode statique pour gérer les clics sur les cases de la checklist
+    // MÃ©thode statique pour gÃ©rer les clics sur les cases de la checklist
     static void handleClick(const sf::Vector2f& mousePosition, std::vector<ChecklistItem>& checklist);
 };

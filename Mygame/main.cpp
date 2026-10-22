@@ -1,43 +1,48 @@
-#include "Fenetre.h"          // Gestion de la fenêtre personnalisée
-#include "Cell.h"             // Représentation des cellules (par exemple, dans une grille)
-#include "MainController.h"   // Contrôleur principal pour gérer les interactions et le flux
+#include "Fenetre.h"
+#include "Cell.h"
+#include "MainController.h"
 
 int main() {
-    // Création de la fenêtre avec des dimensions dynamiques
-    Fenetre F(1300, 800);  // Fenêtre de 1300x800 pixels
-    Cell start;            // Cellule de départ (start)
-    Cell end;              // Cellule de fin (end)
-    bool startPointDefined = false;  // Indique si le point de départ est défini
-    bool endPointDefined = false;    // Indique si le point de fin est défini
-
-    // Initialisation du contrôleur principal 
-    MainController game(F, 30, 50);  // Grille de 30 lignes et 50 colonnes
-
-    // Obtention de la fenêtre SFML
+    Fenetre F(1300, 800);
+    Cell start;
+    Cell end;
+    bool startPointDefined = false;
+    bool endPointDefined = false;
+    MainController game(F, 30, 50);
     sf::RenderWindow& window = F.getWindow();
+    bool needsRedraw = true;
 
-    // Boucle principale : le cœur du programme
-    while (window.isOpen()) {  // Tant que la fenêtre est ouverte
-        sf::Event event;       // Objet pour gérer les événements
-        while (window.pollEvent(event)) {  // Récupération des événements
-            // Si l'utilisateur ferme la fenêtre
-            if (event.type == sf::Event::Closed)
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
                 window.close();
-
-            // Si un clic gauche de souris est détecté
-            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                // Gestion du clic de la souris 
-                game.handleMouseClick(F, start, end, startPointDefined, endPointDefined);
+                break;
+            }
+            if (event.type == sf::Event::Resized || event.type == sf::Event::GainedFocus) {
+                needsRedraw = true;
+            }
+            if (event.type == sf::Event::MouseButtonPressed &&
+                event.mouseButton.button == sf::Mouse::Left) {
+                const auto mousePos = window.mapPixelToCoords({event.mouseButton.x, event.mouseButton.y});
+                game.handleMouseClick(F, start, end, startPointDefined, endPointDefined, mousePos);
+                needsRedraw = true;
             }
         }
-
-        // Phase de dessin sur la fenêtre
-        window.clear(sf::Color::Black);  // Nettoie l'écran avec un fond noir
-        game.drawGrid(F);                // Dessine la grille 
-        game.drawChecklist(F);           // Dessine une checklist interactive 
-        game.drawButtons(F);             // Dessine les boutons interactifs 
-        window.display();                // Affiche le contenu dessiné sur l'écran
+        if (!window.isOpen()) {
+            break;
+        }
+        if (needsRedraw) {
+            window.clear(sf::Color::Black);
+            game.drawGrid(F);
+            game.drawChecklist(F);
+            game.drawButtons(F);
+            window.display();
+            needsRedraw = false;
+        } else {
+            // Keep processing input without rendering an unchanged screen.
+            sf::sleep(sf::milliseconds(8));
+        }
     }
-
-    return 0;  // Fin du programme
+    return 0;
 }

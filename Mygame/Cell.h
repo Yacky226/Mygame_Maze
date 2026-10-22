@@ -1,91 +1,92 @@
 #pragma once 
 #include<SFML/Graphics.hpp>
+#include <limits>
 
-// Énumération pour les types de cellules
+// Ã‰numÃ©ration pour les types de cellules
 enum CellType { None, StartPoint, EndPoint, Wall };
 
 class Cell {
 private:
-    // Propriétés privées
-    float cellesize = 20.0f; // Taille par défaut de la cellule
+    // PropriÃ©tÃ©s privÃ©es
+    float cellesize = 20.0f; // Taille par dÃ©faut de la cellule
     int height;             // Hauteur de la cellule
     int width;              // Largeur de la cellule
-    float heuristic = 0.0f; // Heuristique (utilisé pour A*)
+    float heuristic = 0.0f; // Heuristique (utilisÃ© pour A*)
     CellType type;          // Type de la cellule (None, StartPoint, EndPoint, Wall)
     Cell* parent = nullptr; // Pointeur vers la cellule parente pour retracer le chemin
     float distance = std::numeric_limits<float>::infinity(); // Distance pour Dijkstra
-    bool visited = false;   // Indique si la cellule a été visitée 
+    bool visited = false;   // Indique si la cellule a Ã©tÃ© visitÃ©e 
 
 public:
-    // Propriétés publiques
+    // PropriÃ©tÃ©s publiques
     int indexX = -1;        // Indice X dans la grille
     int indexY = -1;        // Indice Y dans la grille
     float posX;             // Position X de la cellule
     float posY;             // Position Y de la cellule
     sf::Color cellcolor = sf::Color::White; // Couleur actuelle de la cellule
-    sf::RectangleShape cel;                // Représentation graphique de la cellule
+    sf::RectangleShape cel;                // ReprÃ©sentation graphique de la cellule
 
-    // Constructeur avec paramètres
+    // Constructeur avec paramÃ¨tres
     Cell(int x, int y, float posX, float posY, int height, int width);
 
-    // Constructeur par défaut
+    // Constructeur par dÃ©faut
     Cell();
 
     // Constructeur de copie
     Cell(const Cell& C);
 
-    // Définit la cellule parente
+    // DÃ©finit la cellule parente
     void setparent(Cell* c);
 
-    // Récupère la cellule parente
+    // RÃ©cupÃ¨re la cellule parente
     Cell* getparent();
 
-    // Définit la cellule comme visitée
+    // DÃ©finit la cellule comme visitÃ©e
     void setVisited();
 
-    // Vérifie si la cellule est visitée
+    // VÃ©rifie si la cellule est visitÃ©e
     bool getVisited();
 
-    // Définit la distance depuis la source
+    // DÃ©finit la distance depuis la source
     void setdistance(float dis);
 
-    // Récupère la distance depuis la source
+    // RÃ©cupÃ¨re la distance depuis la source
     float getdistance();
 
-    // Définit l'heuristique
+    // DÃ©finit l'heuristique
     void setheuristic(float dis);
 
-    // Récupère l'heuristique
+    // RÃ©cupÃ¨re l'heuristique
     float getheuristic();
 
-    // Met à jour la couleur en fonction du type
+    // Met Ã  jour la couleur en fonction du type
     void updateColor();
 
-    // Retourne une référence vers la cellule actuelle
+    // Retourne une rÃ©fÃ©rence vers la cellule actuelle
     Cell& getCell();
 
-    // Met à jour la couleur avec une couleur spécifique
+    // Met Ã  jour la couleur avec une couleur spÃ©cifique
     void updateColor(const sf::Color& couleur);
 
-    // Gère le clic sur la cellule
+    // GÃ¨re le clic sur la cellule
     void handleClick(bool& startPointDefined, bool& endPointDefined, Cell& start, Cell& end);
 
-    // Définit la couleur de la cellule
+    // DÃ©finit la couleur de la cellule
     void SetColor(sf::Color& couleur);
 
-    // Définit la cellule comme un mur
+    // DÃ©finit la cellule comme un mur
     void SetWall();
 
-    // Surcharge de l'opérateur == pour comparer deux cellules
+    // Surcharge de l'opÃ©rateur == pour comparer deux cellules
     bool operator==(const Cell& C);
 
-    // Récupère le type de la cellule
+    // RÃ©cupÃ¨re le type de la cellule
     CellType getType() const;
 
-    // Définit un nouveau type pour la cellule
+    // DÃ©finit un nouveau type pour la cellule
     void setType(CellType newType);
 
-    // Définit la couleur de la cellule avec une couleur constante
+    // DÃ©finit la couleur de la cellule avec une couleur constante
     void SetColor(const sf::Color& couleur);
 
     // Nettoie la cellule 

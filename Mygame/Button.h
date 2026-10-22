@@ -19,7 +19,7 @@ public:
     //Dessine le Bouton
     void draw(sf::RenderWindow& window);
 
-    //Fontion pour designer le Bouton qui clicqué
+    //Fontion pour designer le Bouton qui clicquÃ©
     bool isClicked(const sf::Vector2f& mousePos);
 
     //Gestionnaire de clic d'un bouton

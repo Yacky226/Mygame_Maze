@@ -1,41 +1,46 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "Cell.h"
 #include "Fenetre.h"
 #include "ChecklistItem.h"
 #include <SFML/Graphics.hpp>
 #include "Button.h"
 
-// Classe principale pour gérer le jeu
+// Classe principale pour gÃ©rer le jeu
 class MainController
 {
 private:
     int rows;                      // Nombre de lignes dans la grille
     int cols;                      // Nombre de colonnes dans la grille
     float cellSize;                // Taille dynamique des cellules
-    sf::Vector2f gridOrigin;       // Position d'origine de la grille sur l'écran
-    std::vector<std::vector<Cell>> grid; // Grille composée d'objets `Cell`
-    std::vector<ChecklistItem> checklist; // Liste d'éléments de checklist
+    sf::Vector2f gridOrigin;       // Position d'origine de la grille sur l'Ã©cran
+    std::vector<std::vector<Cell>> grid; // Grille composÃ©e d'objets `Cell`
+    sf::Font font;                 // PropriÃ©taire de la police utilisÃ©e par les textes
+    bool fontLoaded = false;
+    std::vector<ChecklistItem> checklist; // Liste d'Ã©lÃ©ments de checklist
+    std::vector<std::unique_ptr<Button>> ownedButtons;
     std::vector<Button*> Buttons;         // Liste de pointeurs vers des boutons
 
 public:
-    // Constructeur : initialise le contrôleur principal avec une fenêtre, le nombre de lignes et de colonnes
+    // Constructeur : initialise le contrÃ´leur principal avec une fenÃªtre, le nombre de lignes et de colonnes
     MainController(Fenetre& F, int rows, int cols);
 
-    // Méthode pour initialiser la grille
+    // MÃ©thode pour initialiser la grille
     void initializeGrid();
 
-    // Méthode pour dessiner la grille dans la fenêtre
+    // MÃ©thode pour dessiner la grille dans la fenÃªtre
     void drawGrid(Fenetre& F);
 
-    // Gère les clics de souris sur la grille, définit les points de départ et d'arrivée
+    // GÃ¨re les clics de souris sur la grille, dÃ©finit les points de dÃ©part et d'arrivÃ©e
     void handleMouseClick(
         Fenetre& F,
         Cell& start,
         Cell& end,
         bool& startPointDefined,
-        bool& endPointDefined);
+        bool& endPointDefined,
+        sf::Vector2f mousePos);
 
     // Initialiser la checklist avec des options
     void initializeChecklist();
@@ -43,9 +48,9 @@ public:
     // Initialiser les boutons
     void initializeButtons();
 
-    // Dessiner la checklist dans la fenêtre
+    // Dessiner la checklist dans la fenÃªtre
     void drawChecklist(Fenetre& F);
 
-    // Dessiner les boutons dans la fenêtre
+    // Dessiner les boutons dans la fenÃªtre
     void drawButtons(Fenetre& F);
 };

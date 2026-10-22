@@ -9,14 +9,19 @@ MainController::MainController(Fenetre& F, int rows, int cols)
 {
     // Calcul de la taille dynamique des cellules
     cellSize = std::min(
-        F.getScreenW() / (cols + 10), // Largeur maximale en fonction de l'écran
-        F.getScreenH() / (rows + 2)  // Hauteur maximale en fonction de l'écran
+        F.getScreenW() / (cols + 10), // Largeur maximale en fonction de l'Ã©cran
+        F.getScreenH() / (rows + 2)  // Hauteur maximale en fonction de l'Ã©cran
     );
 
     // Redimensionne la grille
     grid.resize(rows, std::vector<Cell>(cols));
 
-    // Initialise les différentes parties de l'application
+    fontLoaded = font.loadFromFile("Fonts/arial.ttf");
+    if (!fontLoaded) {
+        std::cerr << "Erreur de chargement de la police !" << std::endl;
+    }
+
+    // Initialise les diffÃ©rentes parties de l'application
     initializeGrid();
     initializeChecklist();
     initializeButtons();
@@ -47,28 +52,27 @@ void MainController::handleMouseClick(
     Cell& start,
     Cell& end,
     bool& startPointDefined,
-    bool& endPointDefined)
+    bool& endPointDefined,
+    sf::Vector2f mousePos)
 {
-    sf::RenderWindow& window = F.getWindow();
-    sf::Vector2f mousePos = F.getPositionMouse(window); // Récupère la position de la souris
 
     // Gestion des clics sur les boutons
     for (auto& button : Buttons) {
-        if (button->isClicked(mousePos)) { // Vérifie si un bouton a été cliqué
-            button->onClick(Buttons,grid, checklist, start, end,F, startPointDefined, endPointDefined); // Exécute l'action associée
-            return; // Arrête la vérification si un bouton a été cliqué
+        if (button->isClicked(mousePos)) { // VÃ©rifie si un bouton a Ã©tÃ© cliquÃ©
+            button->onClick(Buttons,grid, checklist, start, end,F, startPointDefined, endPointDefined); // ExÃ©cute l'action associÃ©e
+            return; // ArrÃªte la vÃ©rification si un bouton a Ã©tÃ© cliquÃ©
         }
     }
 
-    // Gestion des clics sur les éléments de la checklist
+    // Gestion des clics sur les Ã©lÃ©ments de la checklist
     ChecklistItem::handleClick(mousePos, checklist);
 
-    // Gestion des clics sur les cellules
-    for (auto& row : grid) {
-        for (auto& cell : row) {
-            if (cell.cel.getGlobalBounds().contains(mousePos)) { // Vérifie si la souris est sur une cellule
-                cell.handleClick(startPointDefined, endPointDefined, start, end); // Gère le clic sur la cellule
-            }
+    // Une seule case par clic, sans chevauchement des contours graphiques.
+    if (mousePos.x >= gridOrigin.x && mousePos.y >= gridOrigin.y) {
+        const int col = static_cast<int>((mousePos.x - gridOrigin.x) / cellSize);
+        const int row = static_cast<int>((mousePos.y - gridOrigin.y) / cellSize);
+        if (row < rows && col < cols) {
+            grid[row][col].handleClick(startPointDefined, endPointDefined, start, end);
         }
     }
 }
@@ -76,19 +80,14 @@ void MainController::handleMouseClick(
 // Initialisation de la checklist
 void MainController::initializeChecklist()
 {
-    // Chargement de la police
-    sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("Fonts/arial.ttf")) { // Chemin vers la police
-        std::cerr << "Erreur de chargement de la police!" << std::endl;
-        return;
-    }
+    if (!fontLoaded) return;
 
-    // Création de la checklist avec des positions dynamiques
+    // CrÃ©ation de la checklist avec des positions dynamiques
     checklist = {
-        ChecklistItem(*font, "BFS", sf::Vector2f(40, 50)),       // Option pour BFS
-        ChecklistItem(*font, "DFS", sf::Vector2f(40, 120)),      // Option pour DFS
-        ChecklistItem(*font, "Dijkstra", sf::Vector2f(40, 190)), // Option pour Dijkstra
-        ChecklistItem(*font, "A_star", sf::Vector2f(40, 260))    // Option pour A*
+        ChecklistItem(font, "BFS", sf::Vector2f(40, 50)),       // Option pour BFS
+        ChecklistItem(font, "DFS", sf::Vector2f(40, 120)),      // Option pour DFS
+        ChecklistItem(font, "Dijkstra", sf::Vector2f(40, 190)), // Option pour Dijkstra
+        ChecklistItem(font, "A_star", sf::Vector2f(40, 260))    // Option pour A*
     };
 }
 
@@ -98,19 +97,17 @@ void MainController::initializeButtons()
     float buttonWidth = 150;  // Largeur du bouton
     float buttonHeight = 50;  // Hauteur du bouton
 
-    // Chargement de la police
-    sf::Font* font = new sf::Font();
-    if (!font->loadFromFile("Fonts/arial.ttf")) { // Chemin vers la police
-        std::cerr << "Erreur de chargement de la police !" << std::endl;
-        return;
-    }
-
-    // Création des boutons avec leurs positions et tailles
-    Buttons = {
-        new Button(*font, "Traitement", sf::Vector2f(40, 350), sf::Vector2f(buttonWidth, buttonHeight)), // Bouton pour traiter la grille
-        new Button(*font, "Map Aleatoire", sf::Vector2f(40, 420), sf::Vector2f(buttonWidth, buttonHeight)), // Bouton pour générer une carte aléatoire
-        new Button(*font, "Clean Map", sf::Vector2f(40, 490), sf::Vector2f(buttonWidth, buttonHeight)) // Bouton pour nettoyer la carte
+    Buttons.clear();
+    ownedButtons.clear();
+    if (!fontLoaded) return;
+    auto addButton = [&](const char* text, float y) {
+        ownedButtons.push_back(std::make_unique<Button>(font, text, sf::Vector2f(40, y),
+            sf::Vector2f(buttonWidth, buttonHeight)));
+        Buttons.push_back(ownedButtons.back().get());
     };
+    addButton("Traitement", 350);
+    addButton("Map Aleatoire", 420);
+    addButton("Clean Map", 490);
 }
 
 // Dessiner la checklist

@@ -4,40 +4,41 @@
 Fenetre::Fenetre(int ScreenW, int ScreenH)
     : ScreenH(ScreenH), ScreenW(ScreenW), window(sf::VideoMode(ScreenW, ScreenH), "Maze")
 {
-    // Initialisation de la fenêtre avec une taille donnée (ScreenW x ScreenH) et un titre ("Maze").
-    // `ScreenH` et `ScreenW` sont des attributs pour stocker les dimensions de la fenêtre.
+    window.setFramerateLimit(60);
+    // Initialisation de la fenÃªtre avec une taille donnÃ©e (ScreenW x ScreenH) et un titre ("Maze").
+    // `ScreenH` et `ScreenW` sont des attributs pour stocker les dimensions de la fenÃªtre.
 }
 
-// Retourne une référence à l'objet RenderWindow
+// Retourne une rÃ©fÃ©rence Ã  l'objet RenderWindow
 sf::RenderWindow& Fenetre::getWindow()
 {
-    // Permet d'accéder directement à l'objet de type `sf::RenderWindow` pour manipuler la fenêtre.
+    // Permet d'accÃ©der directement Ã  l'objet de type `sf::RenderWindow` pour manipuler la fenÃªtre.
     return window;
 }
 
-// Retourne la largeur de la fenêtre
+// Retourne la largeur de la fenÃªtre
 int Fenetre::getScreenW()
 {
-    // Fournit la largeur actuelle de la fenêtre.
+    // Fournit la largeur actuelle de la fenÃªtre.
     return ScreenW;
 }
 
-// Retourne la hauteur de la fenêtre
+// Retourne la hauteur de la fenÃªtre
 int Fenetre::getScreenH()
 {
-    // Fournit la hauteur actuelle de la fenêtre.
+    // Fournit la hauteur actuelle de la fenÃªtre.
     return ScreenH;
 }
 
-// Retourne la position de la souris dans la fenêtre
+// Retourne la position de la souris dans la fenÃªtre
 sf::Vector2f Fenetre::getPositionMouse(sf::RenderWindow& window)
 {
-    // Récupère la position actuelle de la souris en pixels par rapport à la fenêtre.
+    // RÃ©cupÃ¨re la position actuelle de la souris en pixels par rapport Ã  la fenÃªtre.
     sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
 
-    // Convertit cette position en coordonnées 
+    // Convertit cette position en coordonnÃ©es 
     sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
 
-    // Retourne la position convertie en coordonnées
+    // Retourne la position convertie en coordonnÃ©es
     return worldPos;
 }

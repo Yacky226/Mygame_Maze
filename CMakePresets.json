@@ -1,0 +1,30 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "core-debug",
+      "displayName": "Headless engine and tests (Debug)",
+      "binaryDir": "${sourceDir}/build/core-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MAZE_BUILD_LEGACY": "OFF",
+        "BUILD_TESTING": "ON"
+      }
+    },
+    {
+      "name": "core-release",
+      "inherits": "core-debug",
+      "binaryDir": "${sourceDir}/build/core-release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "core-debug", "configurePreset": "core-debug", "configuration": "Debug", "jobs": 2 },
+    { "name": "core-release", "configurePreset": "core-release", "configuration": "Release", "jobs": 2 }
+  ],
+  "testPresets": [
+    { "name": "core-debug", "configurePreset": "core-debug", "configuration": "Debug", "output": { "outputOnFailure": true } },
+    { "name": "core-release", "configurePreset": "core-release", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}

@@ -2,69 +2,69 @@
 
 // Constructeur de la classe ChecklistItem
 ChecklistItem::ChecklistItem(sf::Font& font, const std::string& text, const sf::Vector2f& position)
-    : checked(false) // Initialise l'état à non coché
+    : checked(false) // Initialise l'Ã©tat Ã  non cochÃ©
 {
-    // Configuration de la case à cocher
+    // Configuration de la case Ã  cocher
     checkbox.setSize(sf::Vector2f(20, 20)); // Dimensions de la case
-    checkbox.setFillColor(sf::Color::White); // Couleur de remplissage blanc par défaut
-    checkbox.setOutlineThickness(2); // Épaisseur du contour
+    checkbox.setFillColor(sf::Color::White); // Couleur de remplissage blanc par dÃ©faut
+    checkbox.setOutlineThickness(2); // Ã‰paisseur du contour
     checkbox.setOutlineColor(sf::Color::Black); // Couleur du contour
-    checkbox.setPosition(position); // Position de la case à cocher
+    checkbox.setPosition(position); // Position de la case Ã  cocher
 
-    // Configuration du texte de l'étiquette
-    label.setFont(font); // Définit la police pour l'étiquette
-    label.setString(text); // Texte associé à la case
-    label.setCharacterSize(20); // Taille des caractères
+    // Configuration du texte de l'Ã©tiquette
+    label.setFont(font); // DÃ©finit la police pour l'Ã©tiquette
+    label.setString(text); // Texte associÃ© Ã  la case
+    label.setCharacterSize(20); // Taille des caractÃ¨res
     label.setFillColor(sf::Color::White); // Couleur du texte
-    label.setPosition(position.x + 30, position.y - 5); // Position ajustée par rapport à la case
+    label.setPosition(position.x + 30, position.y - 5); // Position ajustÃ©e par rapport Ã  la case
 }
 
-// Méthode pour dessiner la case à cocher et son étiquette
+// MÃ©thode pour dessiner la case Ã  cocher et son Ã©tiquette
 void ChecklistItem::draw(sf::RenderWindow& window)
 {
-    // Dessine la case à cocher
+    // Dessine la case Ã  cocher
     window.draw(checkbox);
 
-    // Dessine l'étiquette associée
+    // Dessine l'Ã©tiquette associÃ©e
     window.draw(label);
 
-    // Si la case est cochée, dessiner un indicateur
+    // Si la case est cochÃ©e, dessiner un indicateur
     if (checked)
     {
         sf::RectangleShape tick(sf::Vector2f(14, 14)); // Indicateur
         tick.setFillColor(sf::Color::Green); // Couleur de l'indicateur
-        tick.setPosition(checkbox.getPosition().x + 3, checkbox.getPosition().y + 3); // Position centrée dans la case
+        tick.setPosition(checkbox.getPosition().x + 3, checkbox.getPosition().y + 3); // Position centrÃ©e dans la case
         window.draw(tick);
     }
 }
 
-// Méthode pour récupérer le texte de l'étiquette
+// MÃ©thode pour rÃ©cupÃ©rer le texte de l'Ã©tiquette
 std::string ChecklistItem::getText() const
 {
     return label.getString().toAnsiString(); // Retourne le texte
 }
 
-// Méthode pour vérifier si la case est cochée
+// MÃ©thode pour vÃ©rifier si la case est cochÃ©e
 bool ChecklistItem::isChecked() const
 {
     return checked;
 }
 
-// Méthode pour gérer les clics sur les cases à cocher
+// MÃ©thode pour gÃ©rer les clics sur les cases Ã  cocher
 void ChecklistItem::handleClick(const sf::Vector2f& mousePosition, std::vector<ChecklistItem>& checklist)
 {
     // Parcourt toutes les cases de la checklist
     for (auto& item : checklist)
     {
-        // Vérifie si la position du clic se trouve dans la zone de la case
+        // VÃ©rifie si la position du clic se trouve dans la zone de la case
         if (item.checkbox.getGlobalBounds().contains(mousePosition))
         {
-            // Décoche toutes les autres cases
+            // DÃ©coche toutes les autres cases
             for (auto& otherItem : checklist)
             {
                 otherItem.checked = false;
             }
-            // Coche la case cliquée
+            // Coche la case cliquÃ©e
             item.checked = true;
         }
     }

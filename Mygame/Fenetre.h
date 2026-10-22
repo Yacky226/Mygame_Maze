@@ -3,13 +3,13 @@
 
 class Fenetre {
 private:
-	int ScreenW;                  //Largeur de la Fenêtre
-	int ScreenH;		         //Hateur de la Fenêtre
-	sf::RenderWindow window;      //la Fenêtre
+	int ScreenW;                  //Largeur de la FenÃªtre
+	int ScreenH;		         //Hateur de la FenÃªtre
+	sf::RenderWindow window;      //la FenÃªtre
 public:
 	Fenetre(int ScreenW, int ScreenH); //Construceur
-	sf::RenderWindow& getWindow(); // Fonction pour retourner ma Fenêtre
-	int getScreenW();   //Fonction Pour retourner la largeur de la fenêtre
-	int getScreenH();   //Fonction pour retourner la hauteur de la fenètre
-	sf::Vector2f getPositionMouse(sf::RenderWindow& window); //Fonction qui retourne la position d'un element de la fenêtre
+	sf::RenderWindow& getWindow(); // Fonction pour retourner ma FenÃªtre
+	int getScreenW();   //Fonction Pour retourner la largeur de la fenÃªtre
+	int getScreenH();   //Fonction pour retourner la hauteur de la fenÃ¨tre
+	sf::Vector2f getPositionMouse(sf::RenderWindow& window); //Fonction qui retourne la position d'un element de la fenÃªtre
 };

@@ -1,0 +1,31 @@
+name: Native engine
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            sanitizers: "ON"
+          - os: windows-latest
+            sanitizers: "OFF"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Configure without SFML
+        run: cmake -S . -B build/ci -DMAZE_BUILD_LEGACY=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DMAZE_ENABLE_SANITIZERS=${{ matrix.sanitizers }}
+      - name: Build
+        run: cmake --build build/ci --config Debug --parallel 2
+      - name: Test
+        run: ctest --test-dir build/ci -C Debug --output-on-failure
+      - name: Exercise the CLI
+        run: ./build/ci/apps/cli/maze_cli scenarios/weighted-detour.maze.txt --algorithm astar
+        if: runner.os == 'Linux'

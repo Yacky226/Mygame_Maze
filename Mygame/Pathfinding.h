@@ -1,28 +1,19 @@
 #pragma once
-#include <vector>
-#include <queue>
-#include <stack>
-#include <SFML/Graphics.hpp>
+
 #include "Cell.h"
-#include "Button.h"
-#include "ChecklistItem.h"
-class Pathfinding
-{
+#include "maze/search.hpp"
+
+#include <utility>
+#include <vector>
+
+// Compatibility adapter: all searches are implemented in maze_core.
+class Pathfinding {
 public:
-  
-    //Methode de parcours en largeur
-   static std::pair<std::vector<Cell*>, std::vector<Cell*>> bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
-
-    //Methode de parcours en prondeur
-   static std::pair<std::vector<Cell*>, std::vector<Cell*>> dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
-
-    //Methode de parcours des pluscourts chemins avec dijskra
-   static  std::pair<std::vector<Cell*>, std::vector<Cell*>> dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
-
-    //Methode qui retourne les voisins d'une case
-   static  std::vector<Cell*> getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell);
-
-    //Methode de parcours A*
-   static std::pair<std::vector<Cell*>, std::vector<Cell*>> astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    using Result = std::pair<std::vector<Cell*>, std::vector<Cell*>>;
+    static Result run(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end, maze::Algorithm algorithm);
+    static Result bfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    static Result dfs(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    static Result dijkstra(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    static Result astar(std::vector<std::vector<Cell>>& grid, Cell& start, Cell& end);
+    static std::vector<Cell*> getNeighbors(std::vector<std::vector<Cell>>& grid, Cell& cell);
 };
-

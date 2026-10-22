@@ -1,0 +1,34 @@
+services:
+  maze:
+    build:
+      context: .
+    ports:
+      - "127.0.0.1:${MAZE_PORT:-6080}:6080"
+    shm_size: 256m
+    develop:
+      watch:
+        - action: rebuild
+          path: ./Mygame
+          ignore:
+            - include/
+            - lib/
+            - bin/
+            - x64/
+            - Debug/
+            - Release/
+            - "*.vcxproj*"
+            - Linker_arg.txt
+        - action: rebuild
+          path: ./CMakeLists.txt
+        - action: rebuild
+          path: ./core
+        - action: rebuild
+          path: ./apps/cli
+        - action: rebuild
+          path: ./cmake
+        - action: rebuild
+          path: ./scenarios
+        - action: rebuild
+          path: ./docker
+        - action: rebuild
+          path: ./Dockerfile
