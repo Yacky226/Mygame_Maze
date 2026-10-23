@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import {
+  Application,
+  Assets,
+  Container,
+  Graphics,
+  Rectangle,
+  Sprite,
+  Text,
+  Texture,
+} from 'pixi.js';
 import 'pixi.js/unsafe-eval';
 import { lineNodes } from './model';
 import type { Tool } from './model';
@@ -12,12 +21,14 @@ interface Props {
   tool: Tool;
   locked: boolean;
   zoom: number;
+  view: 'technical' | 'ruins';
   onEdit(nodes: number[], begin: boolean): void;
   onHover(node: number | null): void;
 }
 interface Scene {
   app: Application;
   base: Graphics;
+  tiles: Container;
   visits: Graphics;
   route: Graphics;
   cursor: Graphics;
@@ -27,6 +38,41 @@ interface Scene {
   seen: Set<number>;
 }
 
+// One shared download, four materials, sixteen patches each: detail spans four
+// cells instead of shrinking an entire stone pattern into every tiny square.
+const PATCHES = 4;
+const TEXTURE_COUNT = 4 * PATCHES * PATCHES;
+let ruinsTextures: Promise<Texture[]> | undefined;
+function loadRuins() {
+  return (ruinsTextures ??= (async () => {
+    // Pixi's default image loader probes a blob Worker, blocked by our CSP.
+    // Browser image decoding is sufficient for this single bounded atlas.
+    await Assets.init({ preferences: { preferWorkers: false } });
+    return Assets.load<Texture>(`${import.meta.env.BASE_URL}art/ruins-atlas.webp`);
+  })()
+    .then((atlas) => {
+      const halfWidth = atlas.width / 2,
+        halfHeight = atlas.height / 2;
+      return Array.from({ length: TEXTURE_COUNT }, (_, index) => {
+        const material = Math.floor(index / (PATCHES * PATCHES)),
+          patch = index % (PATCHES * PATCHES);
+        return new Texture({
+          source: atlas.source,
+          frame: new Rectangle(
+            ((material % 2) + (patch % PATCHES) / PATCHES) * halfWidth,
+            (Math.floor(material / 2) + Math.floor(patch / PATCHES) / PATCHES) * halfHeight,
+            halfWidth / PATCHES,
+            halfHeight / PATCHES,
+          ),
+        });
+      });
+    })
+    .catch((error) => {
+      ruinsTextures = undefined;
+      throw error;
+    }));
+}
+
 export function GridView(props: Props) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<Scene | null>(null);
@@ -34,7 +80,32 @@ export function GridView(props: Props) {
   latest.current = props;
   const [loaded, setLoaded] = useState(false);
   const [failure, setFailure] = useState('');
+  const [textures, setTextures] = useState<Texture[]>([]);
+  const [textureError, setTextureError] = useState(false);
   const [bounds, setBounds] = useState({ width: 800, height: 520 });
+  const cellSize =
+    (Math.max(3, Math.min(48, bounds.width / props.board.width, bounds.height / props.board.height)) *
+      props.zoom) /
+    100;
+  const reducedDetail = props.board.blocked.length > 16384 || cellSize < 6;
+  const immersive = props.view === 'ruins' && textures.length === TEXTURE_COUNT && !reducedDetail;
+  useEffect(() => {
+    if (props.view !== 'ruins' || textures.length || reducedDetail) return;
+    let disposed = false;
+    loadRuins()
+      .then((value) => {
+        if (!disposed) {
+          setTextures(value);
+          setTextureError(false);
+        }
+      })
+      .catch(() => {
+        if (!disposed) setTextureError(true);
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [props.view, textures.length, reducedDetail]);
 
   useEffect(() => {
     const element = host.current!;
@@ -70,10 +141,12 @@ export function GridView(props: Props) {
         route = new Graphics(),
         cursor = new Graphics();
       const labels = new Container();
-      app.stage.addChild(base, visits, route, labels, cursor);
+      const tiles = new Container();
+      app.stage.addChild(base, tiles, visits, route, labels, cursor);
       scene.current = {
         app,
         base,
+        tiles,
         visits,
         route,
         cursor,
@@ -180,10 +253,8 @@ export function GridView(props: Props) {
   useEffect(() => {
     const current = scene.current;
     if (!current) return;
-    const { board, zoom } = props;
-    const cell =
-      (Math.max(3, Math.min(48, bounds.width / board.width, bounds.height / board.height)) * zoom) /
-      100;
+    const { board } = props;
+    const cell = cellSize;
     current.cell = cell;
     current.app.renderer.resize(board.width * cell, board.height * cell);
     current.base.clear();
@@ -193,6 +264,7 @@ export function GridView(props: Props) {
     current.painted = 0;
     current.seen.clear();
     for (const child of current.labels.removeChildren()) child.destroy();
+    for (const child of current.tiles.removeChildren()) child.destroy();
     for (let node = 0; node < board.blocked.length; node++) {
       const x = (node % board.width) * cell,
         y = Math.floor(node / board.width) * cell;
@@ -204,15 +276,32 @@ export function GridView(props: Props) {
             ? 0x584632
             : 0x354d3c
           : 0x1d2b2a;
-      current.base
-        .roundRect(
-          x + 1,
-          y + 1,
-          Math.max(1, cell - 2),
-          Math.max(1, cell - 2),
-          Math.min(2, cell * 0.08),
-        )
-        .fill(color);
+      if (immersive) {
+        const material = board.blocked[node] ? 0 : weight >= 5 ? 3 : weight > 1 ? 2 : 1;
+        const patch =
+          ((node % board.width) % PATCHES) + (Math.floor(node / board.width) % PATCHES) * PATCHES;
+        const sprite = new Sprite(textures[material * PATCHES * PATCHES + patch]);
+        sprite.position.set(x, y);
+        sprite.width = cell + 0.1;
+        sprite.height = cell + 0.1;
+        sprite.tint = board.blocked[node] ? 0xc0d1cb : 0xc8c9b0;
+        current.tiles.addChild(sprite);
+        if (board.blocked[node] && cell >= 9) {
+          const edge = new Graphics()
+            .rect(x + 0.5, y + 0.5, cell - 1, cell - 1)
+            .stroke({ color: 0x172f2b, width: 1, alpha: 0.75 });
+          current.tiles.addChild(edge);
+        }
+      } else
+        current.base
+          .roundRect(
+            x + 1,
+            y + 1,
+            Math.max(1, cell - 2),
+            Math.max(1, cell - 2),
+            Math.min(2, cell * 0.08),
+          )
+          .fill(color);
       if (
         !board.blocked[node] &&
         weight > 1 &&
@@ -225,7 +314,8 @@ export function GridView(props: Props) {
           style: {
             fontFamily: 'monospace',
             fontSize: Math.max(8, Math.min(12, cell * 0.46)),
-            fill: 0xd4bf94,
+            fill: immersive ? 0xffffff : 0xd4bf94,
+            ...(immersive ? { stroke: { color: 0x1b241d, width: 3 } } : {}),
           },
         });
         label.anchor.set(0.5);
@@ -258,7 +348,7 @@ export function GridView(props: Props) {
     }
     current.app.render();
     // Overlay is rebuilt below after a resize or map edit.
-  }, [props.board, props.zoom, bounds, loaded]);
+  }, [props.board, props.zoom, props.view, textures, bounds, loaded]);
 
   useEffect(() => {
     const current = scene.current;
@@ -281,20 +371,33 @@ export function GridView(props: Props) {
           cell - 2,
           cell - 2,
         )
-        .fill(0x326a5a);
+        .fill({ color: 0x326a5a, alpha: immersive ? 0.72 : 1 });
     }
     current.painted = expanded.length;
     current.route.clear();
     if (path.length > 1) {
-      current.route.moveTo(
-        ((path[0] % board.width) + 0.5) * cell,
-        (Math.floor(path[0] / board.width) + 0.5) * cell,
-      );
-      for (const node of path.slice(1))
-        current.route.lineTo(
-          ((node % board.width) + 0.5) * cell,
-          (Math.floor(node / board.width) + 0.5) * cell,
+      const traceRoute = () => {
+        current.route.moveTo(
+          ((path[0] % board.width) + 0.5) * cell,
+          (Math.floor(path[0] / board.width) + 0.5) * cell,
         );
+        for (const node of path.slice(1))
+          current.route.lineTo(
+            ((node % board.width) + 0.5) * cell,
+            (Math.floor(node / board.width) + 0.5) * cell,
+          );
+      };
+      if (immersive) {
+        traceRoute();
+        current.route.stroke({
+          color: 0x152c20,
+          width: Math.max(4, cell * 0.35),
+          alpha: 0.85,
+          cap: 'round',
+          join: 'round',
+        });
+      }
+      traceRoute();
       current.route.stroke({
         color: 0xc7f488,
         width: Math.max(2, cell * 0.18),
@@ -303,13 +406,17 @@ export function GridView(props: Props) {
       });
     }
     current.app.render();
-  }, [props.expanded, props.path, props.board, props.zoom, bounds, loaded]);
+  }, [props.expanded, props.path, props.board, props.zoom, props.view, textures, bounds, loaded]);
 
   return (
     <div
-      className={`board-scroll ${props.locked ? 'is-locked' : ''}`}
+      className={`board-scroll ${props.locked ? 'is-locked' : ''} ${props.view === 'ruins' ? 'ruins-view' : ''}`}
       ref={host}
       data-testid="grid-host"
+      data-view={props.view}
+      data-textures={
+        textures.length === TEXTURE_COUNT ? 'ready' : textureError ? 'failed' : 'loading'
+      }
     >
       {failure && (
         <p className="canvas-error" role="alert">
@@ -317,6 +424,15 @@ export function GridView(props: Props) {
         </p>
       )}
       {!loaded && !failure && <p className="canvas-loading">Préparation de la grille…</p>}
+      {props.view === 'ruins' && textureError && (
+        <span className="render-note">Textures indisponibles · vue technique conservée</span>
+      )}
+      {props.view === 'ruins' && loaded && !reducedDetail && !textureError && textures.length === 0 && (
+        <span className="render-note">Chargement des matières…</span>
+      )}
+      {props.view === 'ruins' && loaded && !textureError && reducedDetail && (
+          <span className="render-note">Vue technique adaptée à la densité de cette carte</span>
+        )}
     </div>
   );
 }

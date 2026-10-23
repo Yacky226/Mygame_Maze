@@ -3,6 +3,46 @@
 Ce fichier décrit les changements effectivement livrés. Le catalogue complet
 des modes et des évolutions reste dans le [plan directeur](../PLAN_DIRECTEUR_MAZE_STUDIO.md).
 
+## Troisième lot : génération, comparaison et interface graphique — 23 octobre 2026
+
+Le client web passe à **0.3.0**, le moteur à **0.2.0**. Le service `web` reste
+accessible sur http://localhost:8080. Le [guide de ce lot](GENERATION_COMPARISON_VISUALS.md)
+décrit les usages, les garanties, le protocole de mesure et les limites.
+
+| Domaine | Livré |
+| --- | --- |
+| Génération | Backtracker itératif, Prim et Kruskal dans le moteur C++, graines uint32, cartes connexes sans cycle en 4 directions, arrivée la plus éloignée |
+| Reproductibilité | Génération version 1, ordre et PRNG fixes, cartes de référence, même carte native/WASM, provenance et indicateur de modification dans les projets |
+| Recherche | Greedy Best-First ajouté au cœur, à la CLI et au web, sans promesse d’optimalité |
+| Comparaison | Cinq recherches sur un instantané, un échauffement et 3 à 15 mesures, médiane/min/max, surcoût par rapport à Dijkstra, états incompatibles et budgets explicites |
+| Rapports | JSON avec instantané et temps bruts ; CSV avec unités et provenance ; annulation conservant uniquement les séries terminées |
+| Présentation | Bandeau illustré, palette cohérente, dialogues et tableau adaptés au mobile, contrôles de vue accessibles |
+| Graphismes | Univers Ruines en 2D texturée, vue technique, illustration et atlas générés puis optimisés en WebP, ressources locales totalisant 914 682 octets |
+| Performance visuelle | Rendu à la demande, atlas partagé, détail technique sous 6 px/case ou au-delà de 16 384 cases, repli explicite si les matières sont indisponibles |
+| Fichiers | Champs facultatifs `board.generation` et `appearance.view`, compatibilité avec les projets version 1 existants |
+| CLI | Nouveau binaire `maze_generate`, scénarios ASCII utilisables par `maze_cli --algorithm greedy` |
+
+### Validation du troisième lot
+
+- Windows/MSVC : **26 tests CTest réussis**, dont propriétés des trois
+  générateurs, cartes de référence et contre-exemple pondéré de Greedy.
+- Linux/GCC 13 dans Docker : **26 tests CTest réussis**, puis compilation et
+  installation du jeu SFML, de la CLI et du générateur.
+- WebAssembly Release reconstruit avec Emscripten 6.0.10 ; vérification
+  TypeScript et client de production construits avec succès dans Docker.
+- **17 tests Node réussis** : modèle, provenance, statistiques, exports,
+  validation, nouvelles recherches et parité native/WASM.
+- **144 comparaisons native/WASM** sur cartes pondérées : 24 cartes × 3
+  algorithmes × 2 voisinages ; neuf configurations de génération comparées
+  case par case et extrémité par extrémité.
+- **15 parcours Playwright réussis** sur le conteneur de production : moteur réel, textures chargées sous CSP,
+  visibilité du chemin, bascule de vue, génération/reproduction, modification
+  et annulation de provenance, comparaison/export/annulation, carte dense,
+  ressources absentes, recherches, limites et disposition mobile.
+
+Les sections suivantes conservent l’état des lots précédents à leur date de
+validation. Leurs limites historiques ne remplacent pas les ajouts ci-dessus.
+
 ## Deuxième lot : atelier web
 
 L'atelier est accessible sur **http://localhost:8080** avec le service Docker
@@ -111,19 +151,19 @@ ne constitue pas une exécution des sanitizers ni une exécution distante de la 
 - Le workflow CI est fourni dans le dépôt. Son exécution sur GitHub dépend de la
   publication du code et ne découle pas de sa seule présence locale.
 
-## Prochain lot proposé : génération et comparaison
+## Suite proposée après le troisième lot
 
-1. Ajouter des générateurs de labyrinthes avec graine : backtracker, Prim et
-   Kruskal, en conservant la reproductibilité des cartes.
+1. Ajouter l’enregistrement local dans IndexedDB, une bibliothèque de projets,
+   des versions de sauvegarde et une reprise après fermeture de l’onglet.
 2. Constituer un catalogue de scénarios avec difficulté, densité, pondération
    et conditions de déplacement documentées.
-3. Comparer plusieurs algorithmes sur le même instantané : coût, développements,
-   mémoire estimée et temps actif, avec un protocole de mesure répétable.
+3. Étendre le protocole à des collections de graines et de cartes. La frontière
+   actuelle est un compteur, pas une mesure mémoire ; une mesure en octets
+   nécessite une instrumentation dédiée avant toute annonce.
 4. Introduire de nouveaux algorithmes avec leurs conditions de validité et leurs
    garanties, puis les vérifier contre l'oracle et les baselines existantes.
-5. Étendre la persistance et la gestion des projets avant les modes multi-agent,
-   les thèmes multiples et les expériences avancées du plan directeur.
+5. Étendre le contrat de ressources aux thèmes multiples, puis construire les
+   modes de jeu guidés et les expériences multi-agent du plan directeur.
 
-Le critère de fin sera une expérience reproductible : générer ou charger une
-carte, exécuter plusieurs recherches comparables, comprendre leurs compromis
-et exporter les données nécessaires pour retrouver le résultat.
+La génération, les comparaisons sur une carte et l’export reproductible sont
+livrés. Le catalogue enrichi, la persistance et ces extensions restent à faire.

@@ -1,7 +1,7 @@
 # Maze / Mygame
 
 Atelier de recherche de chemin avec un moteur C++20, une interface web
-React/TypeScript/PixiJS et le jeu SFML historique. BFS, DFS, Dijkstra et A*
+React/TypeScript/PixiJS et le jeu SFML historique. BFS, DFS, Dijkstra, A* et Greedy
 partagent le même moteur.
 
 ## Atelier web
@@ -13,10 +13,14 @@ docker compose up --build -d --wait web
 Ouvrir **[Maze Studio](http://localhost:8080)** : dessin des murs et terrains,
 départ/arrivée, diagonales, scénarios, pause, pas à pas, vitesse, résultats et
 import/export JSON. Les recherches s'exécutent dans un Worker WebAssembly.
+La version web 0.3 ajoute trois générateurs reproductibles (backtracker, Prim,
+Kruskal), un comparateur avec rapports JSON/CSV et un univers graphique Ruines
+avec textures et illustration locales. La vue technique reste disponible.
 Le premier build télécharge le SDK et peut prendre plusieurs minutes.
 
 Voir [le guide de l'atelier web](docs/WEB_STUDIO.md) pour les raccourcis,
 le développement, les tests et les limites du format de projet.
+Voir aussi [génération, comparaison et graphismes](docs/GENERATION_COMPARISON_VISUALS.md).
 
 Le [plan directeur Maze Studio](PLAN_DIRECTEUR_MAZE_STUDIO.md) décrit en détail
 la cible du projet : choix technologiques, architecture, modes, graphismes,

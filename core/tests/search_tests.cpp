@@ -9,7 +9,7 @@
 using namespace maze;
 
 namespace {
-constexpr std::array algorithms{Algorithm::Bfs, Algorithm::Dfs, Algorithm::Dijkstra, Algorithm::AStar};
+constexpr std::array algorithms{Algorithm::Bfs, Algorithm::Dfs, Algorithm::Dijkstra, Algorithm::AStar, Algorithm::Greedy};
 
 SearchRequest request_for(const GridMap& map, Algorithm algorithm) {
     SearchRequest request;
@@ -76,7 +76,7 @@ TEST_CASE("All searches solve analytic corridors and same-node requests", "[sear
         require_valid_result(map, request, result);
         REQUIRE(result.cost == 5000);
         REQUIRE(result.path.size() == 6);
-        REQUIRE(result.optimal_cost_guaranteed == (algorithm != Algorithm::Dfs));
+        REQUIRE(result.optimal_cost_guaranteed == (algorithm != Algorithm::Dfs && algorithm != Algorithm::Greedy));
         request.goal = request.start;
         result = search(map, request);
         require_valid_result(map, request, result);
@@ -120,6 +120,26 @@ TEST_CASE("Weighted searches take a cheaper detour", "[search][weighted]") {
     REQUIRE(search(map, request).status == SearchStatus::UnsupportedConfiguration);
     request.algorithm = Algorithm::Dfs;
     require_valid_result(map, request, search(map, request));
+}
+
+TEST_CASE("Greedy follows the heuristic without claiming an optimal weighted cost", "[search][greedy]") {
+    GridMap map(5, 3);
+    for (NodeId node = 6; node <= 8; ++node) map.set_terrain_weight(node, 9);
+    auto request = request_for(map, Algorithm::Greedy);
+    request.start = 5;
+    request.goal = 9;
+    const auto result = search(map, request);
+    require_valid_result(map, request, result);
+    REQUIRE(result.cost == 28000);
+    REQUIRE_FALSE(result.optimal_cost_guaranteed);
+    request.algorithm = Algorithm::Dijkstra;
+    REQUIRE(search(map, request).cost == 6000);
+
+    request.algorithm = Algorithm::Greedy;
+    SearchSession session(map, request);
+    while (session.step(1) == SearchStatus::Running) {}
+    REQUIRE(session.result().path == result.path);
+    REQUIRE(session.result().expanded_order == result.expanded_order);
 }
 
 TEST_CASE("Dijkstra improves a goal already discovered through an expensive diagonal", "[search][regression]") {

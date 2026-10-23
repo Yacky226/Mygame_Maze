@@ -59,11 +59,19 @@ test('WASM validates the boundary and reports resource limits distinctly', () =>
     'invalid_request',
   );
   assert.equal(
-    engine.start({ ...presetBoard('weighted'), ...defaultSettings, weights: [NaN] }).status,
+    engine.start({
+      ...presetBoard('weighted'),
+      ...defaultSettings,
+      weights: [NaN],
+    }).status,
     'invalid_request',
   );
   assert.equal(
-    engine.start({ ...presetBoard('weighted'), ...defaultSettings, connectivity: 6 }).status,
+    engine.start({
+      ...presetBoard('weighted'),
+      ...defaultSettings,
+      connectivity: 6,
+    }).status,
     'invalid_request',
   );
   assert.equal(
@@ -81,7 +89,14 @@ test('Native CLI and WASM agree on deterministic weighted maps', () => {
     for (let sample = 0; sample < 24; sample++) {
       const width = 3 + (random() % 5),
         height = 3 + (random() % 5);
-      const board = { width, height, start: 0, goal: width * height - 1, blocked: [], weights: [] };
+      const board = {
+        width,
+        height,
+        start: 0,
+        goal: width * height - 1,
+        blocked: [],
+        weights: [],
+      };
       const rows = [];
       for (let y = 0; y < height; y++) {
         let row = '';
@@ -97,7 +112,7 @@ test('Native CLI and WASM agree on deterministic weighted maps', () => {
         rows.push(row);
       }
       writeFileSync(filename, rows.join('\n'));
-      for (const algorithm of ['astar', 'dijkstra'])
+      for (const algorithm of ['astar', 'dijkstra', 'greedy'])
         for (const connectivity of [4, 8]) {
           const settings = {
             ...defaultSettings,
@@ -134,4 +149,94 @@ test('Native CLI and WASM agree on deterministic weighted maps', () => {
       rmdirSync(temp);
     }
   }
+});
+
+test('Greedy returns a valid but more costly route and benchmark mode suppresses display payloads', () => {
+  const board = presetBoard('weighted');
+  const greedy = run(board, { ...defaultSettings, algorithm: 'greedy' });
+  assert.equal(greedy.cost, '28000');
+  assert.equal(greedy.optimalCostGuaranteed, false);
+  const reference = run(board);
+  let quiet = engine.start({
+    ...board,
+    ...defaultSettings,
+    recordExpansions: false,
+    includePath: false,
+  });
+  while (quiet.status === 'running') {
+    quiet = engine.step(4096);
+    assert.deepEqual(quiet.expanded, []);
+  }
+  assert.deepEqual(quiet.path, []);
+  assert.equal(quiet.pathEdges, reference.path.length - 1);
+  assert.equal(quiet.cost, reference.cost);
+  assert.equal(quiet.metrics.expandedTotal, reference.metrics.expandedTotal);
+});
+
+test('Native and WASM generators produce the exact same version-one maps and endpoints', () => {
+  const generatorCli =
+    process.env.MAZE_GENERATE ||
+    path.join(
+      path.dirname(cli),
+      process.platform === 'win32' ? 'maze_generate.exe' : 'maze_generate',
+    );
+  for (const algorithm of ['backtracker', 'prim', 'kruskal'])
+    for (const seed of [0, 42, 4294967295]) {
+      const config = { algorithm, seed, width: 21, height: 15 };
+      const generated = module.generateMaze(config);
+      assert.equal(generated.status, 'success');
+      const board = generated.board;
+      const native = spawnSync(
+        generatorCli,
+        ['--generator', algorithm, '--seed', String(seed), '--width', '21', '--height', '15'],
+        { encoding: 'utf8' },
+      );
+      assert.ifError(native.error);
+      assert.equal(native.status, 0, native.stderr);
+      const nativeRows = native.stdout.replaceAll('\r', '').trimEnd().split('\n');
+      const actualRows = Array.from({ length: board.height }, (_, y) =>
+        Array.from({ length: board.width }, (_, x) => {
+          const node = y * board.width + x;
+          return node === board.start && node === board.goal
+            ? 'B'
+            : node === board.start
+              ? 'S'
+              : node === board.goal
+                ? 'G'
+                : board.blocked[node]
+                  ? '#'
+                  : '.';
+        }).join(''),
+      );
+      assert.deepEqual(actualRows, nativeRows, `${algorithm}, seed ${seed}`);
+      assert.deepEqual(board.generation, {
+        algorithm,
+        seed,
+        version: 1,
+        modified: false,
+      });
+      assert.ok(board.weights.every((weight) => weight === 1));
+      assert.equal(run(board).status, 'success');
+    }
+  assert.equal(
+    module.generateMaze({ algorithm: 'prim', seed: 0, width: 3, height: 3 }).board.start,
+    module.generateMaze({ algorithm: 'prim', seed: 0, width: 3, height: 3 }).board.goal,
+  );
+  for (const patch of [
+    { width: 4 },
+    { height: 257 },
+    { seed: -1 },
+    { seed: 4294967296 },
+    { algorithm: 'unknown' },
+  ])
+    assert.equal(
+      module.generateMaze({
+        algorithm: 'prim',
+        width: 41,
+        height: 25,
+        seed: 42,
+        ...patch,
+      }).status,
+      'invalid_request',
+    );
 });

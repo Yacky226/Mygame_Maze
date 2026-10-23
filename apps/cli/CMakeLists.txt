@@ -3,6 +3,10 @@ target_link_libraries(maze_cli PRIVATE maze::core)
 target_compile_definitions(maze_cli PRIVATE MAZE_ENGINE_VERSION="${PROJECT_VERSION}")
 install(TARGETS maze_cli RUNTIME DESTINATION .)
 
+add_executable(maze_generate generate.cpp)
+target_link_libraries(maze_generate PRIVATE maze::core)
+install(TARGETS maze_generate RUNTIME DESTINATION .)
+
 if(BUILD_TESTING)
     add_executable(maze_cli_tests tests/scenario_text_tests.cpp scenario_text.cpp)
     target_include_directories(maze_cli_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")

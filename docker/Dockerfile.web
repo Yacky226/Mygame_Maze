@@ -18,7 +18,7 @@ COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY apps/web/ ./
 COPY --from=wasm /out/engine/ ./public/engine/
-RUN node --test tests/model.test.mjs && npm run build
+RUN node --test tests/model.test.mjs tests/comparison.test.mjs && npm run build
 
 FROM node:22.20.0-bookworm-slim AS runtime
 ENV NODE_ENV=production PORT=8080

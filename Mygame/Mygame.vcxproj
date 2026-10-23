@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClCompile Include="..\core\src\grid_map.cpp" />
     <ClCompile Include="..\core\src\search.cpp" />
+    <ClCompile Include="..\core\src\generator.cpp" />
     <ClCompile Include="Animated.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Cell.cpp" />
@@ -155,6 +156,7 @@
   <ItemGroup>
     <ClInclude Include="..\core\include\maze\grid_map.hpp" />
     <ClInclude Include="..\core\include\maze\search.hpp" />
+    <ClInclude Include="..\core\include\maze\generator.hpp" />
     <ClInclude Include="Animated.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="Cell.h" />

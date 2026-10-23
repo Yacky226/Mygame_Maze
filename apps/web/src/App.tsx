@@ -39,32 +39,26 @@ import {
   randomBoard,
 } from './model';
 import type { Preset, ProjectFile, Tool } from './model';
-import type { Algorithm, Board, SearchSettings } from './protocol';
+import type {
+  Algorithm,
+  Board,
+  SearchSettings,
+  GenerationSettings,
+  ComparisonReport,
+} from './protocol';
 import { useSearch } from './useSearch';
+import { algorithms } from './algorithms';
+import { generators } from './generation';
+import { GeneratorForm } from './GeneratorForm';
+import { ComparisonPanel } from './ComparisonPanel';
+import { comparisonCsv } from './comparison';
 
-const algorithms: { id: Algorithm; label: string; note: string }[] = [
-  {
-    id: 'astar',
-    label: 'A*',
-    note: 'Guidé par une heuristique admissible. Optimal sur les terrains pondérés.',
-  },
-  {
-    id: 'dijkstra',
-    label: 'Dijkstra',
-    note: 'Explore par coût croissant. Optimal sur les terrains pondérés.',
-  },
-  {
-    id: 'bfs',
-    label: 'BFS',
-    note: 'Explore par niveaux. Nécessite des coûts de déplacement uniformes.',
-  },
-  {
-    id: 'dfs',
-    label: 'DFS',
-    note: 'Explore en profondeur. Trouve un chemin sans garantir le coût minimal.',
-  },
-];
-const tools: { id: Tool; label: string; shortcut: string; icon: typeof Square }[] = [
+const tools: {
+  id: Tool;
+  label: string;
+  shortcut: string;
+  icon: typeof Square;
+}[] = [
   { id: 'wall', label: 'Mur', shortcut: 'M', icon: Square },
   { id: 'erase', label: 'Gomme', shortcut: 'E', icon: Eraser },
   { id: 'start', label: 'Départ', shortcut: 'D', icon: MapPin },
@@ -98,7 +92,10 @@ function Modal({
   return (
     <dialog
       ref={ref}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -126,16 +123,21 @@ export function App() {
   const [speed, setSpeed] = useState(2);
   const [zoom, setZoom] = useState(100);
   const [hover, setHover] = useState<number | null>(null);
-  const [modal, setModal] = useState<'help' | 'scenarios' | null>(null);
+  const [modal, setModal] = useState<'help' | 'scenarios' | 'generator' | null>(null);
+  const [view, setView] = useState<'technical' | 'ruins'>('ruins');
   const [notice, setNotice] = useState('');
   const [dimensions, setDimensions] = useState({ width: 40, height: 24 });
   const inputFile = useRef<HTMLInputElement>(null);
   const exportUrl = useRef<string | null>(null);
-  useEffect(() => () => {
-    if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
+    },
+    [],
+  );
   const search = useSearch();
-  const { active, paused, result } = search;
+  const { active: searching, paused, result } = search;
+  const active = searching || search.generating || search.comparing;
   const incompatible = settings.algorithm === 'bfs' && !bfsCompatible(board, settings);
   const algorithm = algorithms.find((item) => item.id === settings.algorithm)!;
   const walls = board.blocked.reduce((sum, blocked) => sum + blocked, 0);
@@ -158,7 +160,25 @@ export function App() {
   }
   function choosePreset(preset: Preset) {
     replaceBoard(presetBoard(preset), presetNames[preset]);
-    setSettings({ ...defaultSettings, connectivity: preset === 'corners' ? 8 : 4 });
+    setSettings({
+      ...defaultSettings,
+      connectivity: preset === 'corners' ? 8 : 4,
+    });
+    setZoom(100);
+    setModal(null);
+  }
+  async function generate(config: GenerationSettings) {
+    const next = await search.generate(config);
+    replaceBoard(
+      next,
+      `${generators.find((item) => item.id === config.algorithm)!.label} · graine ${config.seed}`,
+    );
+    setSettings((previous) => ({
+      ...previous,
+      connectivity: 4,
+      allowCornerCutting: false,
+      maxExpansions: 0,
+    }));
     setZoom(100);
     setModal(null);
   }
@@ -188,23 +208,37 @@ export function App() {
     }
     setBoard((previous) => editBoard(previous, nodes, tool, weight));
   }
-  function exportProject() {
-    const project: ProjectFile = { schemaVersion: 1, title, board, settings };
+  function download(contents: string, mime: string, filename: string) {
     if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }),
-    );
+    const url = URL.createObjectURL(new Blob([contents], { type: mime }));
     exportUrl.current = url;
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'mon-atelier.maze-studio.json';
+    link.download = filename;
     link.hidden = true;
     document.body.appendChild(link);
     link.click();
     link.remove();
     // Keep one bounded export alive until replacement/unmount: a slow download
     // must not race a fixed revocation timeout.
+  }
+  function exportProject() {
+    const project: ProjectFile = {
+      schemaVersion: 1,
+      title,
+      board,
+      settings,
+      appearance: { view },
+    };
+    download(JSON.stringify(project, null, 2), 'application/json', 'mon-atelier.maze-studio.json');
     setNotice('Projet exporté. Le fichier contient la carte et les paramètres de recherche.');
+  }
+  function exportComparison(report: ComparisonReport, format: 'json' | 'csv') {
+    download(
+      format === 'csv' ? comparisonCsv(report) : JSON.stringify(report, null, 2),
+      format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json',
+      `comparaison-${report.fingerprint}.${format}`,
+    );
   }
   async function importProject(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -215,6 +249,7 @@ export function App() {
       const project = parseProject(await file.text());
       replaceBoard(project.board, project.title);
       setSettings(project.settings);
+      setView(project.appearance?.view ?? 'ruins');
       setZoom(100);
       setNotice('Projet importé. La carte est prête à être modifiée.');
     } catch (error) {
@@ -235,8 +270,8 @@ export function App() {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.key === ' ') {
         event.preventDefault();
-        if (active) search.send(paused ? 'resume' : 'pause');
-        else run();
+        if (searching) search.send(paused ? 'resume' : 'pause');
+        else if (!active) run();
       } else if (!active) {
         const selected = tools.find(
           (item) => item.shortcut.toLowerCase() === event.key.toLowerCase(),
@@ -250,7 +285,9 @@ export function App() {
 
   let status = 'Prêt à explorer';
   if (!search.ready) status = search.error ? 'Moteur indisponible' : 'Chargement du moteur…';
-  if (active) status = paused ? 'Recherche en pause' : 'Exploration en cours';
+  if (search.comparing) status = 'Comparaison en cours';
+  else if (search.generating) status = 'Création du labyrinthe';
+  else if (searching) status = paused ? 'Recherche en pause' : 'Exploration en cours';
   else if (result?.status === 'success') status = 'Chemin trouvé';
   else if (result?.status === 'no_path') status = 'Aucun chemin possible';
   else if (result?.status === 'cancelled') status = 'Recherche annulée';
@@ -350,9 +387,9 @@ export function App() {
             <ChevronDown size={15} />
           </div>
           <p className="field-note">{algorithm.note}</p>
-          <span className={`guarantee ${settings.algorithm === 'dfs' ? 'neutral' : ''}`}>
+          <span className={`guarantee ${!algorithm.optimal ? 'neutral' : ''}`}>
             <Check size={12} />
-            {settings.algorithm === 'dfs'
+            {!algorithm.optimal
               ? 'Exploration sans garantie optimale'
               : settings.algorithm === 'bfs'
                 ? 'Optimal si coûts uniformes'
@@ -414,7 +451,10 @@ export function App() {
                 value={dimensions.width}
                 disabled={active}
                 onChange={(event) =>
-                  setDimensions((previous) => ({ ...previous, width: Number(event.target.value) }))
+                  setDimensions((previous) => ({
+                    ...previous,
+                    width: Number(event.target.value),
+                  }))
                 }
               />
             </label>
@@ -429,7 +469,10 @@ export function App() {
                 value={dimensions.height}
                 disabled={active}
                 onChange={(event) =>
-                  setDimensions((previous) => ({ ...previous, height: Number(event.target.value) }))
+                  setDimensions((previous) => ({
+                    ...previous,
+                    height: Number(event.target.value),
+                  }))
                 }
               />
             </label>
@@ -498,7 +541,7 @@ export function App() {
       </aside>
 
       <main id="atelier" className="main">
-        <div className="page-heading">
+        <div className="page-heading hero-heading">
           <div>
             <div className="eyebrow">
               <span />
@@ -507,22 +550,45 @@ export function App() {
             <h1>
               Chaque chemin a sa logique<span>.</span>
             </h1>
-            <p>Dessinez, explorez, comprenez. À vous de tracer la suite.</p>
+            <p>Créez des mondes. Explorez leurs chemins. Comparez vos stratégies.</p>
+            <div className="hero-facts">
+              <span>5 algorithmes</span>
+              <i>·</i>
+              <span>3 générateurs</span>
+              <i>·</i>
+              <span>Un moteur C++</span>
+            </div>
           </div>
-          <button
-            className="scenario-button"
-            aria-label="Explorer les scénarios"
-            onClick={() => setModal('scenarios')}
-            disabled={active}
-          >
-            <BookOpen size={17} />
-            <span>Explorer les scénarios</span>
-            <ArrowUpRight size={15} />
-          </button>
+          <div className="heading-actions">
+            <button
+              className="scenario-button create-maze"
+              aria-label="Créer un labyrinthe"
+              onClick={() => setModal('generator')}
+              disabled={active || !search.ready}
+            >
+              <Sparkles size={17} />
+              <span>Créer un labyrinthe</span>
+              <ArrowUpRight size={15} />
+            </button>
+            <button
+              className="scenario-button"
+              aria-label="Explorer les scénarios"
+              onClick={() => setModal('scenarios')}
+              disabled={active}
+            >
+              <BookOpen size={17} />
+              <span>Explorer les scénarios</span>
+              <ArrowUpRight size={15} />
+            </button>
+          </div>
         </div>
 
         {(notice || search.error || incompatible) && (
-          <div className={`notice ${incompatible || search.error ? 'warning' : ''}`} role="status">
+          <div
+            className={`notice ${incompatible || search.error ? 'warning' : ''}`}
+            role="status"
+            data-testid="editor-notice"
+          >
             <span>
               {search.error ||
                 (incompatible
@@ -607,6 +673,30 @@ export function App() {
               </div>
             </div>
 
+            <div className="viewbar">
+              <div className="view-selector" role="group" aria-label="Style de la carte">
+                <button aria-pressed={view === 'technical'} onClick={() => setView('technical')}>
+                  <Grid2X2 size={14} />
+                  Vue technique
+                </button>
+                <button aria-pressed={view === 'ruins'} onClick={() => setView('ruins')}>
+                  <Mountain size={14} />
+                  Univers Ruines
+                </button>
+              </div>
+              <span className="view-caption">
+                {view === 'ruins' ? 'Pierre · mousse · lumière' : 'Grille · poids · exploration'}
+              </span>
+            </div>
+            {board.generation && (
+              <div className="generation-info" data-testid="generation-info">
+                <Sparkles size={12} />
+                {generators.find((item) => item.id === board.generation!.algorithm)?.label}
+                <span>Graine {board.generation.seed}</span>
+                <span>{board.generation.modified ? 'Carte modifiée' : 'Carte reproductible'}</span>
+              </div>
+            )}
+
             <Suspense
               fallback={
                 <div className="board-scroll">
@@ -621,6 +711,7 @@ export function App() {
                 tool={tool}
                 locked={active}
                 zoom={zoom}
+                view={view}
                 onEdit={paint}
                 onHover={setHover}
               />
@@ -767,20 +858,20 @@ export function App() {
           <div className="playback-actions">
             <button
               className="run-button"
-              disabled={!search.ready || incompatible}
-              onClick={() => (active ? search.send(paused ? 'resume' : 'pause') : run())}
+              disabled={!search.ready || incompatible || search.comparing || search.generating}
+              onClick={() => (searching ? search.send(paused ? 'resume' : 'pause') : run())}
             >
-              {active && !paused ? (
+              {searching && !paused ? (
                 <Pause size={17} fill="currentColor" />
               ) : (
                 <Play size={17} fill="currentColor" />
               )}
-              <span>{active ? (paused ? 'Reprendre' : 'Pause') : 'Lancer la recherche'}</span>
+              <span>{searching ? (paused ? 'Reprendre' : 'Pause') : 'Lancer la recherche'}</span>
               <kbd aria-hidden="true">Espace</kbd>
             </button>
             <button
               className="playback-icon"
-              disabled={!active || !paused}
+              disabled={!searching || !paused}
               onClick={() => search.send('step')}
               aria-label="Avancer d’une étape"
               title="Avancer d’une étape"
@@ -789,7 +880,7 @@ export function App() {
             </button>
             <button
               className="playback-icon"
-              disabled={!active}
+              disabled={!searching}
               onClick={() => search.send('cancel')}
               aria-label="Annuler la recherche"
               title="Annuler la recherche"
@@ -826,6 +917,16 @@ export function App() {
             </strong>
           </div>
         </div>
+        <ComparisonPanel
+          busy={search.comparing}
+          disabled={!search.ready || active}
+          report={search.comparison}
+          progress={search.comparisonProgress}
+          error={search.comparisonError}
+          onStart={(repetitions) => search.compare(board, settings, repetitions)}
+          onCancel={() => search.send('cancel')}
+          onExport={exportComparison}
+        />
         <footer className="main-footer">
           <span>
             <span className="footer-dot" />
@@ -833,11 +934,30 @@ export function App() {
             <i>·</i>Carte traitée dans votre navigateur
           </span>
           <span>
-            MAZE STUDIO <span className="footer-version">/ 0.2</span>
+            MAZE STUDIO <span className="footer-version">/ 0.3</span>
           </span>
         </footer>
       </main>
 
+      {modal === 'generator' && (
+        <Modal
+          title="Construire un nouveau monde"
+          onClose={() => {
+            if (!search.generating) setModal(null);
+          }}
+        >
+          <GeneratorForm
+            busy={search.generating}
+            initial={{
+              width: board.width >= 3 && board.width % 2 === 1 ? board.width : 41,
+              height: board.height >= 3 && board.height % 2 === 1 ? board.height : 25,
+              algorithm: board.generation?.algorithm ?? 'backtracker',
+              seed: board.generation?.seed ?? 42,
+            }}
+            onGenerate={generate}
+          />
+        </Modal>
+      )}
       {modal === 'help' && (
         <Modal title="Prendre en main l’atelier" onClose={() => setModal(null)}>
           <div className="help-content">
@@ -862,7 +982,12 @@ export function App() {
             <p>
               Le calcul actif exclut la lecture animée et la préparation de la recherche. Le temps
               de session inclut les pauses. BFS refuse les coûts non uniformes ; DFS ne garantit pas
-              le coût minimal.
+              le coût minimal. Greedy privilégie la proximité de l’arrivée, sans garantie optimale.
+            </p>
+            <p>
+              Créez un labyrinthe avec une graine pour le reproduire. La vue technique et l’univers
+              Ruines représentent exactement la même carte. Le comparateur mesure les cinq
+              algorithmes sans animation et exporte un rapport JSON ou CSV.
             </p>
             <p>
               Exportez pour conserver votre travail. La carte reste en mémoire dans l’onglet

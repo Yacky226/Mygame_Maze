@@ -13,6 +13,7 @@ const mime = {
   '.wasm': 'application/wasm',
   '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.woff': 'font/woff',
   '.json': 'application/json',

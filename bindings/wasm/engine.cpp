@@ -1,4 +1,5 @@
 #include "maze/search.hpp"
+#include "maze/generator.hpp"
 #include <emscripten/bind.h>
 #include <cmath>
 #include <memory>
@@ -35,12 +36,47 @@ val nodes(const std::vector<maze::NodeId>& values, std::size_t begin = 0) {
     return output;
 }
 
+val generate(const val& config) {
+    try {
+        maze::GenerationRequest request;
+        request.width = integer(config, "width", 255);
+        request.height = integer(config, "height", 255);
+        request.seed = integer(config, "seed", std::numeric_limits<std::uint32_t>::max());
+        const auto algorithm = config["algorithm"].as<std::string>();
+        if (algorithm == "backtracker") request.algorithm = maze::Generator::Backtracker;
+        else if (algorithm == "prim") request.algorithm = maze::Generator::Prim;
+        else if (algorithm == "kruskal") request.algorithm = maze::Generator::Kruskal;
+        else throw std::invalid_argument("Unknown generator");
+        const auto generated = maze::generate_maze(request);
+        auto board = val::object(), blocked = val::array(), weights = val::array();
+        board.set("width", generated.map.width());
+        board.set("height", generated.map.height());
+        board.set("start", generated.start);
+        board.set("goal", generated.goal);
+        for (maze::NodeId node = 0; node < generated.map.size(); ++node) {
+            blocked.call<void>("push", generated.map.blocked(node) ? 1 : 0);
+            weights.call<void>("push", generated.map.terrain_weight(node));
+        }
+        board.set("blocked", blocked); board.set("weights", weights);
+        auto provenance = val::object();
+        provenance.set("algorithm", algorithm);
+        provenance.set("seed", request.seed);
+        provenance.set("version", maze::generator_version);
+        provenance.set("modified", false);
+        board.set("generation", provenance);
+        auto output = val::object();
+        output.set("status", std::string("success")); output.set("board", board);
+        return output;
+    } catch (const std::exception& exception) { return error(exception.what()); }
+}
+
 // One owner per Worker. No SFML, DOM, threads or JavaScript search implementation.
 class Engine {
     std::unique_ptr<maze::GridMap> map_;
     std::unique_ptr<maze::SearchSession> session_;
     maze::SearchRequest request_;
     std::size_t cursor_ = 0;
+    bool include_path_ = true;
 
     val response() {
         if (!session_) return error("No active session");
@@ -54,7 +90,8 @@ class Engine {
         output.set("message", result.message);
         output.set("expanded", nodes(result.expanded_order, cursor_));
         cursor_ = result.expanded_order.size();
-        output.set("path", nodes(result.path));
+        output.set("path", include_path_ ? nodes(result.path) : val::array());
+        output.set("pathEdges", static_cast<unsigned>(result.path.empty() ? 0 : result.path.size() - 1));
         output.set("cost", result.status == maze::SearchStatus::Success ? val(std::to_string(result.cost)) : val::null());
         output.set("optimalCostGuaranteed", result.optimal_cost_guaranteed);
         auto metrics = val::object();
@@ -102,6 +139,7 @@ public:
             else if (algorithm == "dijkstra") request_.algorithm = maze::Algorithm::Dijkstra;
             else if (algorithm == "bfs") request_.algorithm = maze::Algorithm::Bfs;
             else if (algorithm == "dfs") request_.algorithm = maze::Algorithm::Dfs;
+            else if (algorithm == "greedy") request_.algorithm = maze::Algorithm::Greedy;
             else throw std::invalid_argument("Unknown algorithm");
             const auto connectivity = integer(config, "connectivity", 8);
             if (connectivity != 4 && connectivity != 8) throw std::invalid_argument("Connectivity must be 4 or 8");
@@ -109,6 +147,8 @@ public:
             request_.movement.corners = boolean(config, "allowCornerCutting")
                 ? maze::CornerPolicy::AllowCutting : maze::CornerPolicy::ForbidCutting;
             request_.max_expansions = integer(config, "maxExpansions", 1000000);
+            request_.record_expansions = config["recordExpansions"].isUndefined() || boolean(config, "recordExpansions");
+            include_path_ = config["includePath"].isUndefined() || boolean(config, "includePath");
             session_ = std::make_unique<maze::SearchSession>(*map_, request_);
             return response();
         } catch (const std::exception& exception) {
@@ -138,4 +178,5 @@ EMSCRIPTEN_BINDINGS(maze_studio) {
         .function("step", &Engine::step)
         .function("cancel", &Engine::cancel);
     emscripten::function("engineVersion", +[]() { return std::string(MAZE_ENGINE_VERSION); });
+    emscripten::function("generateMaze", &generate);
 }

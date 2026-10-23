@@ -1,4 +1,6 @@
-import type { Algorithm, Board, SearchSettings } from './protocol';
+import type { Board, SearchSettings, GenerationMetadata } from './protocol';
+import { algorithms } from './algorithms.ts';
+import { generators } from './generation.ts';
 
 export type Tool = 'wall' | 'erase' | 'start' | 'goal' | 'terrain';
 export const defaultSettings: SearchSettings = {
@@ -30,9 +32,15 @@ export function blankBoard(width = 40, height = 24): Board {
 }
 
 export function editBoard(board: Board, nodes: number[], tool: Tool, weight: number): Board {
-  const next = { ...board, blocked: [...board.blocked], weights: [...board.weights] };
+  const next = {
+    ...board,
+    blocked: [...board.blocked],
+    weights: [...board.weights],
+  };
+  let changed = false;
   for (const node of nodes) {
     if (!Number.isInteger(node) || node < 0 || node >= next.blocked.length) continue;
+    const before = [next.start, next.goal, next.blocked[node], next.weights[node]];
     if (tool === 'start') {
       next.start = node;
       next.blocked[node] = 0;
@@ -50,7 +58,13 @@ export function editBoard(board: Board, nodes: number[], tool: Tool, weight: num
         next.weights[node] = weight;
       }
     }
+    changed ||=
+      before[0] !== next.start ||
+      before[1] !== next.goal ||
+      before[2] !== next.blocked[node] ||
+      before[3] !== next.weights[node];
   }
+  if (next.generation && changed) next.generation = { ...next.generation, modified: true };
   return next;
 }
 
@@ -102,7 +116,14 @@ export function presetBoard(preset: Preset): Board {
       weights: [1, 1, 1, 1, 1, 1, 9, 9, 9, 1, 1, 1, 1, 1, 1],
     };
   if (preset === 'corners')
-    return { width: 2, height: 2, start: 0, goal: 3, blocked: [0, 1, 1, 0], weights: [1, 1, 1, 1] };
+    return {
+      width: 2,
+      height: 2,
+      start: 0,
+      goal: 3,
+      blocked: [0, 1, 1, 0],
+      weights: [1, 1, 1, 1],
+    };
   const board = blankBoard();
   if (preset === 'no-path') {
     for (const node of [
@@ -133,6 +154,7 @@ export function randomBoard(board: Board, seed = Date.now()): Board {
     weights: Array(board.width * board.height).fill(1),
   };
   next.blocked[next.start] = next.blocked[next.goal] = 0;
+  delete next.generation;
   return next;
 }
 
@@ -147,8 +169,8 @@ export interface ProjectFile {
   title: string;
   board: Board;
   settings: SearchSettings;
+  appearance?: { view: 'technical' | 'ruins' };
 }
-const algorithms: Algorithm[] = ['astar', 'dijkstra', 'bfs', 'dfs'];
 export function parseProject(text: string): ProjectFile {
   if (text.length > 2 * 1024 * 1024) throw new Error('Le fichier dépasse 2 Mio.');
   const input = JSON.parse(text) as ProjectFile;
@@ -189,7 +211,7 @@ export function parseProject(text: string): ProjectFile {
   const settings = input.settings;
   if (
     !settings ||
-    !algorithms.includes(settings.algorithm) ||
+    !algorithms.some((item) => item.id === settings.algorithm) ||
     ![4, 8].includes(settings.connectivity) ||
     typeof settings.allowCornerCutting !== 'boolean' ||
     !Number.isInteger(settings.maxExpansions) ||
@@ -197,10 +219,36 @@ export function parseProject(text: string): ProjectFile {
     settings.maxExpansions > 1000000
   )
     throw new Error('Paramètres de recherche invalides.');
+  let generation: GenerationMetadata | undefined;
+  if (board.generation !== undefined) {
+    const source = board.generation;
+    if (
+      !source ||
+      !generators.some((item) => item.id === source.algorithm) ||
+      source.version !== 1 ||
+      !Number.isInteger(source.seed) ||
+      source.seed < 0 ||
+      source.seed > 4294967295 ||
+      typeof source.modified !== 'boolean'
+    )
+      throw new Error('Provenance de génération invalide.');
+    generation = {
+      algorithm: source.algorithm,
+      seed: source.seed,
+      version: 1,
+      modified: source.modified,
+    };
+  }
+  if (
+    input.appearance !== undefined &&
+    (!input.appearance || !['technical', 'ruins'].includes(input.appearance.view))
+  )
+    throw new Error('Style de carte non reconnu.');
   // Rebuild explicitly; imported properties cannot become application state.
   return {
     schemaVersion: 1,
     title: input.title,
+    ...(input.appearance ? { appearance: { view: input.appearance.view } } : {}),
     board: {
       width: board.width,
       height: board.height,
@@ -208,6 +256,7 @@ export function parseProject(text: string): ProjectFile {
       weights: [...board.weights],
       start: board.start,
       goal: board.goal,
+      ...(generation ? { generation } : {}),
     },
     settings: {
       algorithm: settings.algorithm,

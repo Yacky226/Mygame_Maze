@@ -26,7 +26,8 @@ maze::Algorithm parse_algorithm(std::string_view name) {
     if (name == "dfs") return maze::Algorithm::Dfs;
     if (name == "dijkstra") return maze::Algorithm::Dijkstra;
     if (name == "astar") return maze::Algorithm::AStar;
-    throw std::invalid_argument("Algorithm must be bfs, dfs, dijkstra or astar");
+    if (name == "greedy") return maze::Algorithm::Greedy;
+    throw std::invalid_argument("Algorithm must be bfs, dfs, dijkstra, astar or greedy");
 }
 
 std::uint64_t parse_limit(std::string_view text) {
@@ -41,7 +42,7 @@ std::uint64_t parse_limit(std::string_view text) {
 
 int main(int argc, char** argv) {
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
-        std::cout << "Usage: maze_cli MAP [--algorithm bfs|dfs|dijkstra|astar] [--diagonal]\n"
+        std::cout << "Usage: maze_cli MAP [--algorithm bfs|dfs|dijkstra|astar|greedy] [--diagonal]\n"
                      "                    [--allow-corner-cutting] [--max-expansions N]\n"
                      "Map: rectangular ASCII, # wall, . floor, 1-9 cost multiplier, S/G endpoints, B both.\n"
                      "Costs: 1000 orthogonal, 1414 diagonal, multiplied by destination terrain.\n"

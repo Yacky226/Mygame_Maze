@@ -9,7 +9,7 @@
 
 namespace maze {
 
-enum class Algorithm { Bfs, Dfs, Dijkstra, AStar };
+enum class Algorithm { Bfs, Dfs, Dijkstra, AStar, Greedy };
 enum class Heuristic { Automatic, Zero };
 enum class SearchStatus {
     Running, Success, NoPath, Cancelled, ResourceLimit, InvalidRequest,

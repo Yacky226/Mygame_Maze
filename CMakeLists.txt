@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(MazeStudio VERSION 0.1.0 LANGUAGES CXX)
+project(MazeStudio VERSION 0.2.0 LANGUAGES CXX)
 
 option(MAZE_BUILD_LEGACY "Build the SFML application" ON)
 option(MAZE_BUILD_CLI "Build the headless command-line application" ON)

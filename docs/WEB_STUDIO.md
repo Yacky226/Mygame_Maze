@@ -40,8 +40,9 @@ Adresse historique : http://localhost:6080/vnc.html?autoconnect=true&resize=scal
 - **Départ / Arrivée** : placer une extrémité sur une case ; celle-ci devient libre.
   Les outils mur/terrain/gomme protègent les extrémités.
 - **Terrain** : peindre un poids 2, 3, 5 ou 9 ; le poids multiplie le coût d'entrée.
-- **Algorithme** : A*, Dijkstra, BFS ou DFS. BFS est refusé lorsque les coûts ne
-  sont pas uniformes. DFS ne garantit pas le coût minimal.
+- **Algorithme** : A*, Dijkstra, BFS, DFS ou Greedy Best-First. BFS est refusé
+  lorsque les coûts ne sont pas uniformes. DFS et Greedy ne garantissent pas
+  le coût minimal.
 - **Voisinage** : 4 ou 8 directions. En diagonale, les coins sont protégés par
   défaut ; un interrupteur permet de changer cette règle explicitement.
 - **Lecture** : lancer, pause, reprendre, avancer d'une opération et annuler.
@@ -52,6 +53,15 @@ Adresse historique : http://localhost:6080/vnc.html?autoconnect=true&resize=scal
 - **Historique** : annuler les 32 dernières modifications de carte. Un geste
   continu de pinceau correspond à une seule modification.
 - **Zoom** : 75 à 175 % du cadrage automatique ; défilement si nécessaire.
+- **Créer un labyrinthe** : backtracker, Prim ou Kruskal, dimensions impaires
+  de 3 à 255, graine visible, départ/arrivée automatiques et provenance exportée.
+- **Style** : univers Ruines avec textures locales ou vue technique. Le style
+  est conservé à l’export et ne change ni la carte ni le résultat des recherches.
+- **Comparer les algorithmes** : un échauffement, puis 3 à 15 mesures sur le même
+  instantané ; médiane/minimum/maximum, surcoût et rapports JSON/CSV.
+
+Le [guide génération, comparaison et graphismes](GENERATION_COMPARISON_VISUALS.md)
+précise les garanties, le protocole de mesure et les ressources livrées.
 
 Raccourcis : M mur, E gomme, D départ, A arrivée, T terrain, Espace lancer/pause,
 Ctrl+Z annuler une modification. Le canvas est également accessible au clavier :
@@ -103,9 +113,15 @@ valeur, les extrémités et les paramètres. Les poids importés peuvent aller d
 à 1000, conformément au moteur. Un fichier refusé ne remplace pas la carte.
 
 Ce premier format représente l'atelier courant. Il ne contient pas encore les
-agents multiples, thèmes, scripts, historiques de résultats ou migrations du
+agents multiples, bibliothèques de thèmes, scripts, historiques de résultats ou migrations du
 futur format complet décrit dans le plan directeur. Le travail reste en mémoire
 dans l'onglet : **exporter avant de recharger**. Aucun compte n'est nécessaire.
+
+Depuis la version web 0.3, le champ facultatif `board.generation` conserve
+algorithme, graine, version de génération et indicateur de modification.
+`appearance.view` conserve `technical` ou `ruins`. Les projets version 1 sans
+ces champs restent acceptés. Le rapport du comparateur possède son propre
+contenu ; il ne s’importe pas comme un fichier projet.
 
 ## Développer sous Windows
 
@@ -188,8 +204,12 @@ npm.cmd run test:e2e
 `MAZE_CLI` peut désigner un autre exécutable CLI. Par défaut, les tests attendent
 la CLI Windows Debug dans `build/core-debug/apps/cli/Debug/maze_cli.exe`.
 Les tests de parité comparent statut, coût, chemin et développements entre le
-module WASM et le binaire natif sur 24 cartes pondérées, deux algorithmes et deux
-voisinages. D'autres tests couvrent l'édition, l'import, l'annulation et les coins.
+module WASM et le binaire natif sur 24 cartes pondérées, trois algorithmes et deux
+voisinages (144 comparaisons). Neuf configurations de génération vérifient aussi
+la carte et les extrémités bit pour bit entre natif et WASM. `MAZE_GENERATE`
+peut désigner un autre binaire générateur ; par défaut il se trouve à côté de
+`MAZE_CLI`. D’autres tests couvrent édition, import, provenance, statistiques,
+annulation, export, payload du benchmark et coins.
 
 Les tests Playwright lancent l'aperçu local après le build. Pour vérifier un
 conteneur déjà démarré :
@@ -204,8 +224,8 @@ installé. Les captures et traces de panne sont générées dans `test-results/`
 
 Les traces conservent les étapes, les sources et les échanges, sans captures
 GPU automatiques ni instantanés DOM : les lectures répétées du framebuffer
-perturbaient le rendu logiciel pendant les essais. Deux captures explicites
-contrôlent les dispositions bureau et mobile. Les assertions d'interaction
+perturbaient le rendu logiciel pendant les essais. Des captures explicites
+contrôlent les dispositions bureau et mobile, les textures et le comparateur. Les assertions d'interaction
 restent actives pendant tous les parcours.
 
 ## Références techniques

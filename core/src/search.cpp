@@ -44,7 +44,8 @@ struct SearchSession::Impl {
             return;
         }
         if (request.algorithm != Algorithm::Bfs && request.algorithm != Algorithm::Dfs &&
-            request.algorithm != Algorithm::Dijkstra && request.algorithm != Algorithm::AStar) {
+            request.algorithm != Algorithm::Dijkstra && request.algorithm != Algorithm::AStar &&
+            request.algorithm != Algorithm::Greedy) {
             fail(SearchStatus::UnsupportedConfiguration, "Unknown algorithm");
             return;
         }
@@ -74,8 +75,13 @@ struct SearchSession::Impl {
         return request.algorithm == Algorithm::Dijkstra || request.algorithm == Algorithm::AStar;
     }
 
+    bool priority_frontier() const noexcept {
+        return weighted_frontier() || request.algorithm == Algorithm::Greedy;
+    }
+
     Cost heuristic(NodeId node) const {
-        if (request.algorithm != Algorithm::AStar || request.heuristic == Heuristic::Zero) return 0;
+        if ((request.algorithm != Algorithm::AStar && request.algorithm != Algorithm::Greedy) ||
+            request.heuristic == Heuristic::Zero) return 0;
         const auto a = map.position(node);
         const auto b = map.position(request.goal);
         const Cost dx = a.x > b.x ? a.x - b.x : b.x - a.x;
@@ -89,17 +95,18 @@ struct SearchSession::Impl {
     }
 
     void push(NodeId node) {
-        if (weighted_frontier()) {
+        if (priority_frontier()) {
             const Cost h = heuristic(node);
-            heap.push({node, distances[node], h, add_cost(distances[node], h), sequence++});
+            const Cost score = request.algorithm == Algorithm::Greedy ? h : add_cost(distances[node], h);
+            heap.push({node, distances[node], h, score, sequence++});
         } else {
             frontier.push_back(node);
         }
-        const auto size = static_cast<std::uint64_t>(weighted_frontier() ? heap.size() : frontier.size());
+        const auto size = static_cast<std::uint64_t>(priority_frontier() ? heap.size() : frontier.size());
         result.metrics.frontier_peak = std::max(result.metrics.frontier_peak, size);
     }
 
-    bool empty() const noexcept { return weighted_frontier() ? heap.empty() : frontier.empty(); }
+    bool empty() const noexcept { return priority_frontier() ? heap.empty() : frontier.empty(); }
 
     void fail(SearchStatus status, const char* message) {
         result.status = status;
@@ -116,7 +123,8 @@ struct SearchSession::Impl {
                 std::reverse(result.path.begin(), result.path.end());
                 result.cost = distances[request.goal];
                 result.status = SearchStatus::Success;
-                result.optimal_cost_guaranteed = request.algorithm != Algorithm::Dfs;
+                result.optimal_cost_guaranteed = request.algorithm == Algorithm::Bfs ||
+                    request.algorithm == Algorithm::Dijkstra || request.algorithm == Algorithm::AStar;
                 return;
             }
             node = parents[node];
@@ -127,7 +135,7 @@ struct SearchSession::Impl {
 
     void advance() {
         NodeId current;
-        if (weighted_frontier()) {
+        if (priority_frontier()) {
             const Entry entry = heap.top();
             heap.pop();
             current = entry.node;
@@ -224,6 +232,7 @@ std::string_view to_string(Algorithm algorithm) noexcept {
     case Algorithm::Dfs: return "dfs";
     case Algorithm::Dijkstra: return "dijkstra";
     case Algorithm::AStar: return "astar";
+    case Algorithm::Greedy: return "greedy";
     }
     return "unknown";
 }

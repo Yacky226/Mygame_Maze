@@ -1,7 +1,7 @@
-# Moteur Maze Studio — premier lot de modernisation
+# Moteur Maze Studio — C++20, CLI et génération
 
 Le cœur `maze_core` ne connaît ni SFML, ni les pixels, ni les polices. Il contient
-la carte, les règles de déplacement, les quatre recherches et la validation des
+la carte, les règles de déplacement, cinq recherches, trois générateurs et la validation des
 chemins. Le jeu existant l'utilise via `Mygame/Pathfinding.cpp`.
 
 ## Construire sans interface graphique
@@ -64,10 +64,16 @@ murale ne constitue pas automatiquement le temps CPU du processus.
 - Une seule paire d'extrémités, ou un unique `B`, est requise.
 - Limites : 1 048 576 cases et fichier de 4 Mio maximum.
 
-Options : `--algorithm bfs|dfs|dijkstra|astar`, `--diagonal`,
+Options : `--algorithm bfs|dfs|dijkstra|astar|greedy`, `--diagonal`,
 `--allow-corner-cutting`, `--max-expansions N`. La limite zéro signifie absence
 de plafond d'expansions supplémentaire. `--help` décrit les codes de sortie.
 Les diagonales interdisent de couper les coins par défaut.
+
+Le binaire `maze_generate` produit des scénarios ASCII reproductibles :
+`--generator backtracker|prim|kruskal --seed N --width N --height N`.
+Le [guide du troisième lot](GENERATION_COMPARISON_VISUALS.md) décrit le contrat
+de génération version 1 et les limites. Greedy Best-First utilise seulement la
+priorité heuristique ; il peut trouver un chemin plus coûteux que Dijkstra/A*.
 
 Codes de sortie : 0 succès, 2 entrée/configuration invalide, 3 absence de chemin,
 4 limite de ressources, 5 erreur interne.
